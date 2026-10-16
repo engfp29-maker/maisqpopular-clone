@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meus pedidos | Farmácia Mais Que Popular</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="wrap">
+    <nav class="crumb"><a href="index.html">Início</a> › <span>Meus pedidos</span></nav>
+    <h1 class="page-title">Meus pedidos</h1>
+
+    <div id="orders-list"></div>
+
+    <div class="empty" id="no-orders" hidden>
+      <div class="e-ico">📦</div>
+      <h3>Você ainda não fez pedidos</h3>
+      <p>Quando finalizar uma compra, ela aparece aqui.</p>
+      <a class="btn btn-primary btn-lg" href="index.html">Começar a comprar</a>
+    </div>
+  </main>
+
+  <footer>
+    <div class="foot-bottom">
+      <p id="f-legal"></p>
+      <p class="demo">Site demonstrativo (clone de estudo). Produtos, preços e imagens são ilustrativos.</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const PAY_LABEL = { pix: "Pix", credit: "Cartão de crédito", debit: "Cartão de débito", money: "Dinheiro" };
+    const STATUS = ["Confirmado", "Em separação", "Saiu para entrega", "Entregue"];
+
+    function fmtDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }) +
+        " às " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    }
+    // status "simulado" com base no tempo decorrido desde a compra
+    function statusOf(iso) {
+      const mins = (Date.now() - new Date(iso).getTime()) / 60000;
+      if (mins < 2) return 0;
+      if (mins < 30) return 1;
+      if (mins < 120) return 2;
+      return 3;
+    }
+
+    function whatsappLink(order) {
+      const itensTxt = order.items.map((it) => `• ${it.qty}x ${it.name}`).join("\n");
+      const endTxt = order.address
+        ? `\n\nEndereço: ${order.address.rua}, ${order.address.num}${order.address.compl ? " - " + order.address.compl : ""}, ${order.address.bairro} - CEP ${order.address.cep}`
+        : "\n\nRetirada no balcão (Clique e Retire)";
+      return wpp(`Olá! Sobre o pedido ${order.id}:\n\n${itensTxt}${endTxt}\n\nTotal: ${brl(order.total)}`);
+    }
+
+    function card(order) {
+      const st = statusOf(order.date);
+      const nItens = order.items.reduce((a, i) => a + i.qty, 0);
+      const entrega = order.delivery === "pickup" ? "🏬 Clique e Retire" : "🚚 Entrega em casa";
+      return `
+        <article class="order-card">
+          <header class="oc-head">
+            <div>
+              <strong class="oc-id">${order.id}</strong>
+              <small class="oc-date">${fmtDate(order.date)}</small>
+            </div>
+            <span class="oc-status s${st}">${STATUS[st]}</span>
+          </header>
+          <div class="oc-track">
+            ${STATUS.map((s, i) => `<span class="dot ${i <= st ? "on" : ""}">${s}</span>`).join("")}
+          </div>
+          <div class="oc-items">${order.items.map((it) => `<span class="oc-chip">${it.qty}× ${it.name}</span>`).join("")}</div>
+          <footer class="oc-foot">
+            <div class="oc-meta"><span>${entrega}</span><span>·</span><span>${PAY_LABEL[order.pay] || order.pay}</span><span>·</span><span>${nItens} ${nItens === 1 ? "item" : "itens"}</span></div>
+            <div class="oc-total">${brl(order.total)}</div>
+          </footer>
+          <div class="oc-actions">
+            <button class="btn btn-ghost btn-sm" data-repeat="${order.id}" type="button">Comprar novamente</button>
+            <a class="btn btn-ghost btn-sm" href="${whatsappLink(order)}" target="_blank" rel="noopener">Falar no WhatsApp</a>
+          </div>
+        </article>`;
+    }
+
+    function draw() {
+      let hist = [];
+      try { hist = JSON.parse(localStorage.getItem("mq_orders")) || []; } catch {}
+      const list = document.getElementById("orders-list");
+      const empty = document.getElementById("no-orders");
+      if (!hist.length) { list.hidden = true; empty.hidden = false; return; }
+      list.hidden = false; empty.hidden = true;
+      list.innerHTML = hist.map(card).join("");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("f-legal").textContent =
+        `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
+      draw();
+
+      document.addEventListener("click", (e) => {
+        const rep = e.target.closest("[data-repeat]");
+        if (!rep) return;
+        let hist = [];
+        try { hist = JSON.parse(localStorage.getItem("mq_orders")) || []; } catch {}
+        const order = hist.find((o) => o.id === rep.dataset.repeat);
+        if (!order) return;
+        const cart = getCart();
+        order.items.forEach((it) => { cart[it.id] = (cart[it.id] || 0) + it.qty; });
+        setCart(cart);
+        toast("Itens adicionados à sacola");
+        location.href = "carrinho.html";
+      });
+    });
+  </script>
+</body>
+</html>

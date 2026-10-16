@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedido confirmado | Farmácia Mais Que Popular</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="wrap">
+    <div class="confirm-box" id="confirm-box">
+      <div class="confirm-ico">✅</div>
+      <h1>Pedido confirmado!</h1>
+      <p class="confirm-sub">Obrigado pela preferência. Já estamos preparando sua sacola. 💙</p>
+      <div class="confirm-id">Pedido <strong id="order-id">—</strong></div>
+    </div>
+
+    <div class="confirm-grid" id="confirm-content" hidden>
+      <section class="co-card">
+        <h2>Itens</h2>
+        <div class="mini-list" id="order-items"></div>
+        <hr class="sum-div" />
+        <div class="sum-row"><span>Subtotal</span><span id="o-sub"></span></div>
+        <div class="sum-row"><span>Entrega</span><span id="o-frete"></span></div>
+        <div class="sum-row" id="o-desc-row" hidden style="color:#0f9d58;"><span>Desconto</span><span id="o-desc"></span></div>
+        <div class="sum-row total"><span>Total</span><span id="o-total"></span></div>
+      </section>
+
+      <section class="co-card">
+        <h2>Detalhes</h2>
+        <div class="kv"><small>Entrega</small><span id="o-delivery"></span></div>
+        <div class="kv" id="o-addr-wrap"><small>Endereço</small><span id="o-addr"></span></div>
+        <div class="kv"><small>Pagamento</small><span id="o-pay"></span></div>
+        <div class="kv" id="o-obs-wrap" hidden><small>Observação</small><span id="o-obs"></span></div>
+        <a class="btn btn-primary btn-block btn-lg" id="wa" target="_blank" rel="noopener" href="#" style="margin-top:16px;">Enviar pedido no WhatsApp</a>
+        <a class="btn btn-ghost btn-block" href="index.html" style="margin-top:10px;">Voltar à loja</a>
+      </section>
+    </div>
+
+    <div class="empty" id="no-order" hidden style="margin-top:30px;">
+      <div class="e-ico">🧾</div>
+      <h3>Nenhum pedido recente</h3>
+      <p>Faça um pedido para vê-lo aqui.</p>
+      <a class="btn btn-primary btn-lg" href="index.html">Começar a comprar</a>
+    </div>
+  </main>
+
+  <footer>
+    <div class="foot-bottom">
+      <p id="f-legal"></p>
+      <p class="demo">Site demonstrativo (clone de estudo). Produtos, preços e imagens são ilustrativos.</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const PAY_LABEL = { pix: "Pix", credit: "Cartão de crédito", debit: "Cartão de débito", money: "Dinheiro" };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("f-legal").textContent =
+        `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
+
+      let order;
+      try { order = JSON.parse(localStorage.getItem("mq_last_order")); } catch {}
+      if (!order) {
+        document.getElementById("confirm-box").hidden = true;
+        document.getElementById("no-order").hidden = false;
+        return;
+      }
+
+      document.getElementById("order-id").textContent = order.id;
+      document.getElementById("order-items").innerHTML = order.items
+        .map((it) => `<div class="mini-row"><span>${it.qty}× ${it.name}</span><span>${brl(it.price * it.qty)}</span></div>`)
+        .join("");
+
+      document.getElementById("o-sub").textContent = brl(order.subtotal);
+      document.getElementById("o-frete").textContent =
+        order.delivery === "pickup" ? "Retirada" : order.frete === 0 ? "Grátis" : brl(order.frete);
+      if (order.desc) {
+        document.getElementById("o-desc-row").hidden = false;
+        document.getElementById("o-desc").textContent = "− " + brl(order.desc);
+      }
+      document.getElementById("o-total").textContent = brl(order.total);
+      document.getElementById("o-delivery").textContent =
+        order.delivery === "pickup" ? "Clique e Retire (balcão)" : "Entrega em casa";
+      if (order.address) {
+        const a = order.address;
+        document.getElementById("o-addr").textContent =
+          `${a.rua}, ${a.num}${a.compl ? " — " + a.compl : ""} · ${a.bairro} · CEP ${a.cep}`;
+      } else {
+        document.getElementById("o-addr-wrap").hidden = true;
+      }
+      document.getElementById("o-pay").textContent = PAY_LABEL[order.pay] || order.pay;
+      if (order.obs) document.getElementById("o-obs").textContent = order.obs;
+      else document.getElementById("o-obs-wrap").hidden = true;
+
+      const itensTxt = order.items.map((it) => `• ${it.qty}x ${it.name}`).join("\n");
+      const endTxt = order.address
+        ? `\n\nEndereço: ${order.address.rua}, ${order.address.num}${order.address.compl ? " - " + order.address.compl : ""}, ${order.address.bairro} - CEP ${order.address.cep}`
+        : "\n\nRetirada no balcão (Clique e Retire)";
+      document.getElementById("wa").href = wpp(
+        `Olá! Acabei de fazer o pedido ${order.id} pelo site:\n\n${itensTxt}${endTxt}\n\nPagamento: ${PAY_LABEL[order.pay]}\nTotal: ${brl(order.total)}`
+      );
+
+      document.getElementById("confirm-content").hidden = false;
+    });
+  </script>
+</body>
+</html>

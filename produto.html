@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produto | Farmácia Mais Que Popular</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="wrap">
+    <div class="benefits" id="benefits"></div>
+    <nav class="crumb" id="crumb"></nav>
+
+    <section class="product" id="product"></section>
+
+    <section class="section" id="relacionados-sec">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Você também pode gostar</span>
+          <h2 id="rel-title">Relacionados</h2>
+        </div>
+        <a id="rel-link" href="index.html">Ver categoria</a>
+      </div>
+      <div class="grid" id="relacionados"></div>
+    </section>
+  </main>
+
+  <a class="wpp-float" id="wpp" target="_blank" rel="noopener" href="#">💬 Comprar pelo WhatsApp</a>
+
+  <footer>
+    <div class="foot-bottom">
+      <p id="f-legal"></p>
+      <p class="demo">Site demonstrativo (clone de estudo). Produtos, preços e imagens são ilustrativos.</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const id = new URLSearchParams(location.search).get("id");
+      const p = byId(id) || PRODUCTS[0];
+      const off = discountPct(p);
+
+      document.title = p.name + " | Farmácia Mais Que Popular";
+      document.getElementById("crumb").innerHTML =
+        `<a href="index.html">Início</a> › <a href="categoria.html?cat=${p.cat}">${catName(p.cat)}</a> › <span>${p.name}</span>`;
+
+      document.getElementById("product").innerHTML = `
+        <div class="p-media" aria-hidden="true">${p.ico}</div>
+        <div class="p-info">
+          <span class="p-tag">${p.tag}</span>
+          <h1>${p.name}</h1>
+          <div class="p-rating">★★★★★ <small>(${p.reviews} avaliações)</small></div>
+          <div class="p-price">
+            <span class="now">${p.service && p.price === 0 ? "Grátis" : brl(p.price)}</span>
+            ${p.oldPrice ? `<span class="was">${brl(p.oldPrice)}</span>` : ""}
+            ${off ? `<span class="p-tag" style="background:#e6f7ee;color:#0f9d58;">${off}% OFF</span>` : ""}
+          </div>
+          <p class="p-stock">✓ Em estoque — ${STORE.hoursShort}</p>
+          <div class="p-buy">
+            <div class="qty">
+              <button type="button" id="q-minus" aria-label="Diminuir">−</button>
+              <span id="q-val">1</span>
+              <button type="button" id="q-plus" aria-label="Aumentar">+</button>
+            </div>
+            <button class="btn btn-primary btn-lg" id="buy" type="button">Adicionar à sacola</button>
+          </div>
+          ${p.rx ? `<div class="p-note"><strong>⚠️ Medicamento com receita</strong>Precisa de prescrição médica. Envie a receita pelo WhatsApp.</div>` : ""}
+          <div class="p-note">
+            <strong>Como receber</strong>
+            🚚 Entrega no seu bairro (Tapanã, Pratinha, Parque Verde e Icoaraci).<br>
+            🏬 Retire na loja em até 1 hora — ${STORE.address}.
+          </div>
+          <p class="p-desc">Produto disponível na ${STORE.name}. Consulte sempre a bula e, em caso de dúvidas, fale com a nossa farmacêutica responsável.</p>
+        </div>`;
+
+      let qty = 1;
+      const qv = document.getElementById("q-val");
+      document.getElementById("q-plus").onclick = () => { qty++; qv.textContent = qty; };
+      document.getElementById("q-minus").onclick = () => { if (qty > 1) { qty--; qv.textContent = qty; } };
+      document.getElementById("buy").onclick = () => addToCart(p.id, qty);
+
+      document.getElementById("wpp").href =
+        wpp(`Olá! Tenho interesse em: ${p.name} (${brl(p.price)}).`);
+
+      // Relacionados (mesma categoria)
+      let rel = PRODUCTS.filter((x) => x.cat === p.cat && x.id !== p.id);
+      if (rel.length < 5) rel = rel.concat(PRODUCTS.filter((x) => x.id !== p.id && !rel.includes(x)));
+      rel = rel.slice(0, 5);
+      document.getElementById("rel-title").textContent = "Mais em " + catName(p.cat);
+      document.getElementById("rel-link").href = "categoria.html?cat=" + p.cat;
+      document.getElementById("relacionados").innerHTML = rel.map(productCard).join("");
+
+      document.getElementById("f-legal").textContent =
+        `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ofertas da semana | Farmácia Mais Que Popular</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="wrap">
+    <div class="benefits" id="benefits"></div>
+
+    <section class="hero" style="grid-template-columns:1fr;margin-top:16px;">
+      <div class="hero-main" style="min-height:200px;">
+        <p style="font-weight:800;letter-spacing:1.4px;text-transform:uppercase;opacity:.9;font-size:12px;margin:0 0 10px;">Piscou, perdeu</p>
+        <h1>Ofertas da semana</h1>
+        <p id="offers-sub">Descontos em medicamentos, dermocosméticos, higiene e muito mais.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Saltando de preço</span>
+          <h2>Maiores descontos</h2>
+        </div>
+        <a href="categoria.html?cat=ofertas">Ver todos os filtros</a>
+      </div>
+      <div class="grid" id="grid-top"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Aproveite</span>
+          <h2>Todas as ofertas</h2>
+        </div>
+      </div>
+      <div class="grid" id="grid-all"></div>
+    </section>
+  </main>
+
+  <a class="wpp-float" id="wpp" target="_blank" rel="noopener" href="#">💬 Comprar pelo WhatsApp</a>
+
+  <footer>
+    <div class="foot-bottom">
+      <p id="f-legal"></p>
+      <p class="demo">Site demonstrativo (clone de estudo). Produtos, preços e imagens são ilustrativos.</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const offers = PRODUCTS.filter((p) => p.oldPrice);
+
+      document.getElementById("offers-sub").textContent =
+        `${offers.length} produtos com desconto. Aproveite enquanto durar o estoque.`;
+
+      const top = [...offers].sort((a, b) => discountPct(b) - discountPct(a)).slice(0, 5);
+      document.getElementById("grid-top").innerHTML = top.map(productCard).join("");
+      document.getElementById("grid-all").innerHTML = offers.map(productCard).join("");
+
+      document.getElementById("wpp").href =
+        wpp("Olá! Vim pelo site e queria saber mais sobre as ofertas da semana.");
+
+      document.getElementById("f-legal").textContent =
+        `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
+    });
+  </script>
+</body>
+</html>

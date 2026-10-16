@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha sacola | Farmácia Mais Que Popular</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="wrap">
+    <nav class="crumb"><a href="index.html">Início</a> › <span>Minha sacola</span></nav>
+    <h1 style="font-size:28px;font-weight:900;color:var(--blue);">Minha sacola</h1>
+
+    <div class="cart-layout" id="cart-layout">
+      <div class="cart-list" id="cart-list"></div>
+      <aside class="summary" id="summary"></aside>
+    </div>
+
+    <div class="empty" id="cart-empty" hidden>
+      <div class="e-ico">🛒</div>
+      <h3>Sua sacola está vazia</h3>
+      <p>Adicione produtos e eles aparecerão aqui.</p>
+      <a class="btn btn-primary btn-lg" href="index.html">Voltar às compras</a>
+    </div>
+  </main>
+
+  <a class="wpp-float" id="wpp" target="_blank" rel="noopener" href="#">💬 Comprar pelo WhatsApp</a>
+
+  <footer>
+    <div class="foot-bottom">
+      <p id="f-legal"></p>
+      <p class="demo">Site demonstrativo (clone de estudo). Produtos, preços e imagens são ilustrativos.</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    function draw() {
+      const cart = getCart();
+      const ids = Object.keys(cart);
+      const layout = document.getElementById("cart-layout");
+      const empty = document.getElementById("cart-empty");
+
+      if (!ids.length) {
+        layout.hidden = true; empty.hidden = false;
+        document.getElementById("wpp").href = wpp("Olá! Vim pelo site e queria fazer um pedido.");
+        return;
+      }
+      layout.hidden = false; empty.hidden = true;
+
+      document.getElementById("cart-list").innerHTML = ids.map((id) => {
+        const p = byId(id); const q = cart[id];
+        return `
+          <div class="cart-row">
+            <a class="cart-thumb" href="produto.html?id=${p.id}" aria-hidden="true">${p.ico}</a>
+            <div class="cart-info">
+              <h4><a href="produto.html?id=${p.id}">${p.name}</a></h4>
+              <small>${p.tag} · ${brl(p.price)} cada</small>
+              <button class="cart-remove" data-remove="${p.id}" type="button">Remover</button>
+            </div>
+            <div class="qty">
+              <button type="button" data-dec="${p.id}" aria-label="Diminuir">−</button>
+              <span>${q}</span>
+              <button type="button" data-inc="${p.id}" aria-label="Aumentar">+</button>
+            </div>
+            <div class="cart-sub">${brl(p.price * q)}</div>
+          </div>`;
+      }).join("");
+
+      const total = cartTotal();
+      const frete = total >= 15000 ? 0 : 1290;
+      const totalComFrete = total + frete;
+
+      document.getElementById("summary").innerHTML = `
+        <h3>Resumo do pedido</h3>
+        <div class="sum-row"><span>Subtotal</span><span>${brl(total)}</span></div>
+        <div class="sum-row"><span>Entrega</span><span>${frete === 0 ? "Grátis" : brl(frete)}</span></div>
+        ${frete !== 0 ? `<div class="sum-row" style="color:#0f9d58;"><span>Faltam ${brl(15000 - total)} p/ frete grátis</span><span></span></div>` : ""}
+        <div class="sum-row total"><span>Total</span><span>${brl(totalComFrete)}</span></div>
+        <a class="btn btn-primary btn-block btn-lg" href="checkout.html" id="checkout">Finalizar pedido</a>
+        <button class="btn btn-ghost btn-block" id="checkout-wpp" type="button" style="margin-top:10px;">Finalizar pelo WhatsApp</button>
+        <a class="btn btn-ghost btn-block" href="index.html" style="margin-top:10px;">Continuar comprando</a>
+      `;
+
+      const itens = ids.map((id) => `• ${cart[id]}x ${byId(id).name}`).join("\n");
+      document.getElementById("checkout-wpp").onclick = () =>
+        window.open(wpp(`Olá! Quero finalizar meu pedido:\n\n${itens}\n\nSubtotal: ${brl(total)}\nEntrega: ${frete === 0 ? "Grátis" : brl(frete)}\nTotal: ${brl(totalComFrete)}`), "_blank");
+      document.getElementById("wpp").href = wpp("Olá! Vim pelo site e queria fazer um pedido.");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      draw();
+      document.getElementById("f-legal").textContent =
+        `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
+
+      document.addEventListener("click", (e) => {
+        const inc = e.target.closest("[data-inc]");
+        const dec = e.target.closest("[data-dec]");
+        const rem = e.target.closest("[data-remove]");
+        if (inc) { setQty(inc.dataset.inc, getCart()[inc.dataset.inc] + 1); draw(); }
+        if (dec) { setQty(dec.dataset.dec, getCart()[dec.dataset.dec] - 1); draw(); }
+        if (rem) { removeFromCart(rem.dataset.remove); draw(); }
+      });
+    });
+  </script>
+</body>
+</html>

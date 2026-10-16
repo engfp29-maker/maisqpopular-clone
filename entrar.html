@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar ou cadastre-se | Farmácia Mais Que Popular</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="wrap">
+    <nav class="crumb"><a href="index.html">Início</a> › <span id="crumb-label">Entrar</span></nav>
+
+    <div class="auth-wrap">
+      <h1 id="auth-title">Bem-vindo de volta!</h1>
+      <p class="sub" id="auth-sub">Acesse sua conta para acompanhar pedidos e ofertas exclusivas.</p>
+
+      <div class="auth-tabs">
+        <button id="tab-login" class="active" type="button">Entrar</button>
+        <button id="tab-signup" type="button">Criar conta</button>
+      </div>
+
+      <form id="auth-form" novalidate>
+        <div class="field" id="name-field" hidden>
+          <label for="nome">Nome completo</label>
+          <input id="nome" name="nome" type="text" placeholder="Como podemos te chamar?" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="email">E-mail</label>
+          <input id="email" name="email" type="email" placeholder="voce@email.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="senha">Senha</label>
+          <input id="senha" name="senha" type="password" placeholder="Sua senha" autocomplete="current-password" required />
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" type="submit" id="auth-submit">Entrar</button>
+      </form>
+
+      <p class="auth-foot" id="auth-foot">
+        Não tem conta? <a href="#" id="go-signup">Criar agora</a>
+      </p>
+
+      <div class="p-note" id="logged-note" hidden>
+        <strong>Conta</strong>
+        <span id="logged-email"></span>
+        <div style="margin-top:12px;">
+          <button class="btn btn-ghost btn-sm" id="logout" type="button">Sair da conta</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <a class="wpp-float" id="wpp" target="_blank" rel="noopener" href="#">💬 Comprar pelo WhatsApp</a>
+
+  <footer>
+    <div class="foot-bottom">
+      <p id="f-legal"></p>
+      <p class="demo">Site demonstrativo (clone de estudo). Cadastro e login são apenas simulados (localStorage).</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const USER_KEY = "mq_user_v1";
+    const getUser = () => { try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch { return null; } };
+    const setUser = (u) => u ? localStorage.setItem(USER_KEY, JSON.stringify(u)) : localStorage.removeItem(USER_KEY);
+
+    function refreshHeaderUser() {
+      const u = getUser();
+      const link = document.querySelector(".ha-user");
+      if (!link) return;
+      if (u) {
+        link.href = "entrar.html";
+        link.querySelector(".ha-txt").innerHTML =
+          `<small>Olá,</small><strong>${u.nome.split(" ")[0]}</strong>`;
+      }
+    }
+
+    function showLogged() {
+      const u = getUser();
+      const form = document.getElementById("auth-form");
+      const tabs = document.querySelector(".auth-tabs");
+      const note = document.getElementById("logged-note");
+      const foot = document.getElementById("auth-foot");
+      if (!u) return false;
+      document.getElementById("auth-title").textContent = "Você está conectado";
+      document.getElementById("auth-sub").textContent = "Aproveite suas ofertas exclusivas +Q.";
+      document.getElementById("crumb-label").textContent = "Minha conta";
+      form.hidden = true; tabs.hidden = true; foot.hidden = true;
+      note.hidden = false;
+      document.getElementById("logged-email").textContent = u.email;
+      return true;
+    }
+
+    function setMode(mode) {
+      const isSignup = mode === "signup";
+      document.getElementById("tab-login").classList.toggle("active", !isSignup);
+      document.getElementById("tab-signup").classList.toggle("active", isSignup);
+      document.getElementById("name-field").hidden = !isSignup;
+      document.getElementById("auth-title").textContent = isSignup ? "Crie sua conta" : "Bem-vindo de volta!";
+      document.getElementById("auth-sub").textContent = isSignup
+        ? "Cadastre-se e ganhe pontos no programa +Q Fidelidade."
+        : "Acesse sua conta para acompanhar pedidos e ofertas exclusivas.";
+      document.getElementById("auth-submit").textContent = isSignup ? "Criar conta" : "Entrar";
+      document.getElementById("auth-foot").innerHTML = isSignup
+        ? 'Já tem conta? <a href="#" id="go-login">Entrar</a>'
+        : 'Não tem conta? <a href="#" id="go-signup">Criar agora</a>';
+      document.getElementById("crumb-label").textContent = isSignup ? "Criar conta" : "Entrar";
+      bindFoot();
+    }
+    function bindFoot() {
+      const gs = document.getElementById("go-signup");
+      const gl = document.getElementById("go-login");
+      if (gs) gs.onclick = (e) => { e.preventDefault(); setMode("signup"); };
+      if (gl) gl.onclick = (e) => { e.preventDefault(); setMode("login"); };
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("wpp").href = wpp("Olá! Vim pelo site.");
+      document.getElementById("f-legal").textContent =
+        `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
+
+      refreshHeaderUser();
+      if (showLogged()) return;
+
+      document.getElementById("tab-login").onclick = () => setMode("login");
+      document.getElementById("tab-signup").onclick = () => setMode("signup");
+      bindFoot();
+
+      document.getElementById("auth-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const nome = document.getElementById("nome").value.trim() || "Cliente";
+        const email = document.getElementById("email").value.trim();
+        const senha = document.getElementById("senha").value;
+        const isSignup = !document.getElementById("name-field").hidden;
+        if (!email || !senha) { toast("Preencha e-mail e senha"); return; }
+        if (isSignup && senha.length < 6) { toast("Senha deve ter 6+ caracteres"); return; }
+        setUser({ nome, email });
+        toast(isSignup ? "Conta criada com sucesso!" : "Que bom te ver de novo!");
+        showLogged();
+      });
+
+      document.getElementById("logout").onclick = () => {
+        setUser(null);
+        location.reload();
+      };
+    });
+  </script>
+</body>
+</html>

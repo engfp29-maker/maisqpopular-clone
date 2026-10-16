@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finalizar pedido | Farmácia Mais Que Popular</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="wrap">
+    <nav class="crumb"><a href="carrinho.html">Minha sacola</a> › <span>Finalizar pedido</span></nav>
+    <h1 class="page-title">Finalizar pedido</h1>
+
+    <!-- Steps -->
+    <ol class="steps" id="steps">
+      <li class="step active" data-step="1"><span class="step-n">1</span> Entrega</li>
+      <li class="step" data-step="2"><span class="step-n">2</span> Endereço</li>
+      <li class="step" data-step="3"><span class="step-n">3</span> Pagamento</li>
+    </ol>
+
+    <div class="checkout-layout" id="checkout-layout">
+      <div class="co-forms">
+
+        <!-- Etapa 1: tipo de entrega -->
+        <section class="co-card" data-panel="1">
+          <h2>Como você quer receber?</h2>
+          <div class="option-grid">
+            <label class="option">
+              <input type="radio" name="delivery" value="delivery" checked />
+              <span class="opt-body">
+                <span class="opt-ico">🚚</span>
+                <strong>Entrega em casa</strong>
+                <small>Tapanã, Pratinha, Parque Verde e Icoaraci</small>
+                <b class="opt-price" data-frete-label></b>
+              </span>
+            </label>
+            <label class="option">
+              <input type="radio" name="delivery" value="pickup" />
+              <span class="opt-body">
+                <span class="opt-ico">🏬</span>
+                <strong>Clique e Retire</strong>
+                <small>Retire já separado com o seu nome</small>
+                <b class="opt-price" style="color:#0f9d58;">Grátis</b>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Etapa 2: endereço -->
+        <section class="co-card" data-panel="2" hidden>
+          <h2>Endereço de entrega</h2>
+          <div class="co-fields">
+            <div class="field">
+              <label for="cep">CEP</label>
+              <input id="cep" inputmode="numeric" placeholder="66825-000" />
+            </div>
+            <div class="field">
+              <label for="rua">Rua / Avenida</label>
+              <input id="rua" placeholder="Ex.: Av. Augusto Montenegro" />
+            </div>
+            <div class="field field-sm">
+              <label for="num">Número</label>
+              <input id="num" inputmode="numeric" placeholder="1234" />
+            </div>
+            <div class="field">
+              <label for="bairro">Bairro</label>
+              <input id="bairro" placeholder="Tapanã" />
+            </div>
+            <div class="field">
+              <label for="compl">Complemento (opcional)</label>
+              <input id="compl" placeholder="Apto, bloco, referência" />
+            </div>
+          </div>
+        </section>
+
+        <!-- Etapa 3: pagamento -->
+        <section class="co-card" data-panel="3" hidden>
+          <h2>Forma de pagamento</h2>
+          <div class="pay-list">
+            <label class="pay-opt">
+              <input type="radio" name="pay" value="pix" checked />
+              <span class="pay-body"><span class="pay-ico">⚡</span><strong>Pix</strong><small>Aprovação imediata · 5% de desconto</small></span>
+            </label>
+            <label class="pay-opt">
+              <input type="radio" name="pay" value="credit" />
+              <span class="pay-body"><span class="pay-ico">💳</span><strong>Cartão de crédito</strong><small>Até 3x sem juros</small></span>
+            </label>
+            <label class="pay-opt">
+              <input type="radio" name="pay" value="debit" />
+              <span class="pay-body"><span class="pay-ico">🏦</span><strong>Cartão de débito</strong><small>Na entrega, com maquininha</small></span>
+            </label>
+            <label class="pay-opt">
+              <input type="radio" name="pay" value="money" />
+              <span class="pay-body"><span class="pay-ico">💵</span><strong>Dinheiro</strong><small>Informe o troco na observação</small></span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:14px;">
+            <label for="obs">Observação do pedido (opcional)</label>
+            <input id="obs" placeholder="Ex.: entregar após as 18h" />
+          </div>
+        </section>
+
+        <div class="co-actions">
+          <button class="btn btn-ghost" id="back" type="button" hidden>← Voltar</button>
+          <button class="btn btn-primary btn-lg" id="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- Resumo -->
+      <aside class="summary" id="summary"></aside>
+    </div>
+
+    <div class="empty" id="co-empty" hidden>
+      <div class="e-ico">🛒</div>
+      <h3>Sua sacola está vazia</h3>
+      <p>Adicione produtos para finalizar um pedido.</p>
+      <a class="btn btn-primary btn-lg" href="index.html">Voltar às compras</a>
+    </div>
+  </main>
+
+  <footer>
+    <div class="foot-bottom">
+      <p id="f-legal"></p>
+      <p class="demo">Site demonstrativo (clone de estudo). Checkout simulado, nenhum pagamento é processado.</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const STATE = { step: 1, order: null };
+    const PIX_DISCOUNT = 0.05;
+    const FREE_SHIP_MIN = 15000;
+    const SHIP_FEE = 1290;
+
+    function freteTotal(total, delivery) {
+      if (delivery === "pickup") return 0;
+      return total >= FREE_SHIP_MIN ? 0 : SHIP_FEE;
+    }
+    function payDesconto(total, pay) {
+      return pay === "pix" ? Math.round(total * PIX_DISCOUNT) : 0;
+    }
+
+    function currentDelivery() {
+      return document.querySelector('input[name="delivery"]:checked').value;
+    }
+    function currentPay() {
+      return document.querySelector('input[name="pay"]:checked').value;
+    }
+
+    function renderSummary() {
+      const cart = getCart();
+      const ids = Object.keys(cart);
+      const total = cartTotal();
+      const delivery = currentDelivery();
+      const pay = currentPay();
+      const frete = freteTotal(total, delivery);
+      const desc = payDesconto(total, pay);
+      const final = total + frete - desc;
+
+      const itensHtml = ids.map((id) => {
+        const p = byId(id);
+        return `<div class="mini-row"><span>${cart[id]}× ${p.name}</span><span>${brl(p.price * cart[id])}</span></div>`;
+      }).join("");
+
+      document.getElementById("summary").innerHTML = `
+        <h3>Resumo do pedido</h3>
+        <div class="mini-list">${itensHtml}</div>
+        <hr class="sum-div" />
+        <div class="sum-row"><span>Subtotal</span><span>${brl(total)}</span></div>
+        <div class="sum-row"><span>Entrega</span><span>${delivery === "pickup" ? "Retirada" : frete === 0 ? "Grátis" : brl(frete)}</span></div>
+        ${desc ? `<div class="sum-row" style="color:#0f9d58;"><span>Desconto Pix (5%)</span><span>− ${brl(desc)}</span></div>` : ""}
+        <div class="sum-row total"><span>Total</span><span>${brl(final)}</span></div>
+        <p class="sum-note">${delivery === "delivery" && frete !== 0 ? `Faltam ${brl(FREE_SHIP_MIN - total)} para frete grátis.` : delivery === "delivery" ? "🎉 Você ganhou frete grátis!" : "Você retira no balcão."}</p>
+      `;
+      document.querySelectorAll("[data-frete-label]").forEach((el) => {
+        el.textContent = total >= FREE_SHIP_MIN ? "Grátis" : `+ ${brl(SHIP_FEE)}`;
+        el.style.color = total >= FREE_SHIP_MIN ? "#0f9d58" : "var(--ink-2)";
+      });
+    }
+
+    function setStep(n) {
+      STATE.step = n;
+      document.querySelectorAll(".co-card").forEach((c) => c.hidden = Number(c.dataset.panel) !== n);
+      document.querySelectorAll(".step").forEach((s) => {
+        const i = Number(s.dataset.step);
+        s.classList.toggle("active", i === n);
+      });
+      document.getElementById("back").hidden = n === 1;
+      document.getElementById("next").textContent = n === 3 ? "Concluir pedido" : "Continuar";
+      renderSummary();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function validateStep(n) {
+      if (n === 2 && currentDelivery() === "delivery") {
+        const cep = document.getElementById("cep").value.trim();
+        const rua = document.getElementById("rua").value.trim();
+        const num = document.getElementById("num").value.trim();
+        if (!cep || !rua || !num) { toast("Preencha CEP, rua e número"); return false; }
+      }
+      return true;
+    }
+
+    function buildOrder() {
+      const delivery = currentDelivery();
+      const pay = currentPay();
+      const total = cartTotal();
+      const frete = freteTotal(total, delivery);
+      const desc = payDesconto(total, pay);
+      return {
+        id: "MQ" + Date.now().toString().slice(-8),
+        date: new Date().toISOString(),
+        items: Object.entries(getCart()).map(([id, q]) => ({ id, qty: q, name: byId(id).name, price: byId(id).price })),
+        delivery, pay,
+        address: delivery === "delivery" ? {
+          cep: document.getElementById("cep").value.trim(),
+          rua: document.getElementById("rua").value.trim(),
+          num: document.getElementById("num").value.trim(),
+          bairro: document.getElementById("bairro").value.trim(),
+          compl: document.getElementById("compl").value.trim()
+        } : null,
+        obs: document.getElementById("obs").value.trim(),
+        subtotal: total, frete, desc, total: total + frete - desc
+      };
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("f-legal").textContent =
+        `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
+
+      if (!Object.keys(getCart()).length) {
+        document.getElementById("checkout-layout").hidden = true;
+        document.getElementById("steps").hidden = true;
+        document.getElementById("co-empty").hidden = false;
+        return;
+      }
+
+      document.querySelectorAll('input[name="delivery"], input[name="pay"]').forEach((r) =>
+        r.addEventListener("change", renderSummary));
+
+      document.getElementById("next").onclick = () => {
+        if (!validateStep(STATE.step)) return;
+        if (STATE.step < 3) { setStep(STATE.step + 1); return; }
+        const order = buildOrder();
+        localStorage.setItem("mq_last_order", JSON.stringify(order));
+        try {
+          const hist = JSON.parse(localStorage.getItem("mq_orders")) || [];
+          hist.unshift(order);
+          localStorage.setItem("mq_orders", JSON.stringify(hist.slice(0, 30)));
+        } catch {}
+        setCart({});
+        location.href = "pedido.html";
+      };
+      document.getElementById("back").onclick = () => { if (STATE.step > 1) setStep(STATE.step - 1); };
+
+      setStep(1);
+    });
+  </script>
+</body>
+</html>
