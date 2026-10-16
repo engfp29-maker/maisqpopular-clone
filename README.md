@@ -1,5 +1,7 @@
 # Farmácia Mais Que Popular — Clone de estudo
 
+**🔗 Demo ao vivo:** https://maisqpopular-clone.vercel.app
+
 Clone de estudo inspirado no **layout e-commerce do Pague Menos** (https://www.paguemenos.com.br/),
 adaptado à identidade, aos produtos e ao contexto da **Farmácia Mais Que Popular** (Tapanã, Belém-PA).
 
