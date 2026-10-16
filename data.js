@@ -5,8 +5,8 @@
 
 const STORE = {
   name: "Farmácia Mais Que Popular",
-  short: "+Q Popular",
-  tag: "farmácia do Tapanã",
+  short: "Farmácia",
+  tag: "+Q Popular",
   whatsapp: "5591984087045",
   whatsappFmt: "(91) 98408-7045",
   instagram: "farmaciapopulartapana",
@@ -28,19 +28,15 @@ const CATEGORIES = [
   { slug: "dermo-e-beleza", name: "Dermo e Beleza", icon: "🧴" },
   { slug: "mamaes-e-bebes", name: "Mamães e bebês", icon: "🍼" },
   { slug: "higiene-pessoal", name: "Higiene pessoal", icon: "🧼" },
-  { slug: "vida-saudavel", name: "Vida Saudável", icon: "🍊" },
-  { slug: "conveniencia", name: "Conveniência", icon: "🛒" },
   { slug: "servicos-de-saude", name: "Serviços de Saúde", icon: "🩺" },
-  { slug: "marcas-exclusivas", name: "Marcas Exclusivas", icon: "⭐" },
 ];
 
 /* Departamentos (navegação por imagem) */
 const DEPARTMENTS = [
   { name: "Ofertas", slug: "ofertas", icon: "🔥" },
-  { name: "Emagrecedores", slug: "vida-saudavel", icon: "⚖️" },
   { name: "Skincare", slug: "dermo-e-beleza", icon: "🧴" },
   { name: "Azia e Gastrite", slug: "medicamentos-e-saude", icon: "🫗" },
-  { name: "Whey Protein", slug: "vida-saudavel", icon: "🥤" },
+  { name: "Vitaminas", slug: "medicamentos-e-saude", icon: "💊" },
   { name: "Protetor Solar Facial", slug: "dermo-e-beleza", icon: "☀️" },
 ];
 
@@ -81,13 +77,13 @@ const PRODUCTS = [
   { id: "hig-05", cat: "higiene-pessoal", name: "Sabonete glicerinado 90g", tag: "Higiene", ico: "🧼", price: 490, rating: 4.5, reviews: 289, rx: false },
   { id: "hig-06", cat: "higiene-pessoal", name: "Fralda geriátrica pacote G", tag: "Cuidado do Idoso", ico: "🧓", price: 5990, oldPrice: 7490, rating: 4.8, reviews: 366, rx: false },
 
-  // Vida Saudável
-  { id: "sau-01", cat: "vida-saudavel", name: "Vitamina C 1g efervescente 10 comprimidos", tag: "Vitaminas", ico: "🍊", price: 1990, oldPrice: 2690, rating: 4.8, reviews: 745, rx: false },
-  { id: "sau-02", cat: "vida-saudavel", name: "Polivitamínico A-Z 60 cápsulas", tag: "Vitaminas", ico: "💊", price: 4590, oldPrice: 5990, rating: 4.9, reviews: 903, rx: false },
-  { id: "sau-03", cat: "vida-saudavel", name: "Whey protein concentrado 900g", tag: "Suplementos", ico: "🥤", price: 14990, oldPrice: 18990, rating: 4.7, reviews: 512, rx: false },
-  { id: "sau-04", cat: "vida-saudavel", name: "Ômega 3 1000mg 60 cápsulas", tag: "Suplementos", ico: "🐟", price: 5990, oldPrice: 7990, rating: 4.8, reviews: 388, rx: false },
-  { id: "sau-05", cat: "vida-saudavel", name: "Colágeno hidrolisado 300g", tag: "Suplementos", ico: "✨", price: 7990, oldPrice: 9990, rating: 4.7, reviews: 621, rx: false },
-  { id: "sau-06", cat: "vida-saudavel", name: "Emagrecedor termogênico 60 cápsulas", tag: "Emagrecedores", ico: "⚖️", price: 9990, oldPrice: 12990, rating: 4.4, reviews: 245, rx: false },
+  // Vitaminas e Suplementos
+  { id: "sau-01", cat: "medicamentos-e-saude", name: "Vitamina C 1g efervescente 10 comprimidos", tag: "Vitaminas", ico: "🍊", price: 1990, oldPrice: 2690, rating: 4.8, reviews: 745, rx: false },
+  { id: "sau-02", cat: "medicamentos-e-saude", name: "Polivitamínico A-Z 60 cápsulas", tag: "Vitaminas", ico: "💊", price: 4590, oldPrice: 5990, rating: 4.9, reviews: 903, rx: false },
+  { id: "sau-03", cat: "medicamentos-e-saude", name: "Whey protein concentrado 900g", tag: "Suplementos", ico: "🥤", price: 14990, oldPrice: 18990, rating: 4.7, reviews: 512, rx: false },
+  { id: "sau-04", cat: "medicamentos-e-saude", name: "Ômega 3 1000mg 60 cápsulas", tag: "Suplementos", ico: "🐟", price: 5990, oldPrice: 7990, rating: 4.8, reviews: 388, rx: false },
+  { id: "sau-05", cat: "medicamentos-e-saude", name: "Colágeno hidrolisado 300g", tag: "Suplementos", ico: "✨", price: 7990, oldPrice: 9990, rating: 4.7, reviews: 621, rx: false },
+  { id: "sau-06", cat: "medicamentos-e-saude", name: "Emagrecedor termogênico 60 cápsulas", tag: "Emagrecedores", ico: "⚖️", price: 9990, oldPrice: 12990, rating: 4.4, reviews: 245, rx: false },
 
   // Conveniência
   { id: "con-01", cat: "conveniencia", name: "Álcool em gel 70% 500ml", tag: "Cuidados", ico: "🧪", price: 1590, oldPrice: 2190, rating: 4.9, reviews: 812, rx: false },

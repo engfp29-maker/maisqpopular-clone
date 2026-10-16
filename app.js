@@ -56,16 +56,11 @@ function renderHeader() {
   }).join("");
   host.innerHTML = `
     <div class="topbar">
-      <nav class="atalhos" aria-label="Atalhos">
-        <a href="index.html#entrega">📍 Nossas lojas</a>
-        <a href="index.html#app">📱 Baixe nosso APP</a>
-        <a href="categoria.html?cat=servicos-de-saude">❓ Precisa de ajuda</a>
-      </nav>
       <p class="topbar-tagline">+Q preço, +Q cuidado, +Q perto de você.</p>
     </div>
     <div class="header-main">
       <a class="logo" href="index.html" aria-label="${STORE.name}">
-        <span class="logo-badge">+Q</span>
+        <img class="logo-img" src="logo.webp" alt="Logo da ${STORE.short}" width="52" height="52" />
         <span class="logo-text"><strong>${STORE.short}</strong><small>${STORE.tag}</small></span>
       </a>
       <form class="search" id="search-form" role="search">
@@ -99,7 +94,6 @@ function renderBenefits() {
     { ico: "🏬", t: "Clique e Retire", s: "Retire já separado com o seu nome" },
     { ico: "💊", t: "Entrega de medicamentos", s: "Todos, onde você estiver" },
     { ico: "🕗", t: "Aberto todos os dias", s: STORE.hoursShort },
-    { ico: "⭐", t: `Nota ${STORE.rating} no Google`, s: `${STORE.reviews} avaliações` },
   ];
   host.innerHTML = items.map((i) => `
     <div class="benefit"><span class="b-ico">${i.ico}</span><div><strong>${i.t}</strong><small>${i.s}</small></div></div>

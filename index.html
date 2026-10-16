@@ -98,18 +98,6 @@
       <div class="grid" id="grid-bebes"></div>
     </section>
 
-    <!-- VIDA SAUDÁVEL -->
-    <section class="section" id="vida-saudavel">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">Bem-estar</span>
-          <h2>Vida Saudável</h2>
-        </div>
-        <a href="categoria.html?cat=vida-saudavel">Ver categoria</a>
-      </div>
-      <div class="grid" id="grid-vida"></div>
-    </section>
-
     <!-- SERVIÇOS -->
     <section class="section" id="entrega">
       <div class="section-head">
@@ -128,7 +116,7 @@
   <footer>
     <div class="foot-grid">
       <div class="foot-brand">
-        <div class="brand-logo">+Q</div>
+        <img class="brand-logo-img" src="logo.webp" alt="Logo da farmácia" width="46" height="46" />
         <strong>Farmácia Mais Que Popular</strong>
         <p>+Q preço, +Q cuidado, +Q perto de você.</p>
         <p id="fidelidade"><strong style="display:block;color:#fff;">Programa +Q Fidelidade</strong>Junte pontos e troque por descontos exclusivos.</p>
@@ -157,7 +145,6 @@
     </div>
     <div class="foot-bottom">
       <p id="f-legal"></p>
-      <p class="demo">Site demonstrativo (clone de estudo). Produtos, preços e imagens são ilustrativos.</p>
     </div>
   </footer>
 
@@ -177,7 +164,6 @@
       renderProducts("grid-med", byCat("medicamentos-e-saude").slice(0, 5));
       renderProducts("grid-beleza", byCat("dermo-e-beleza").slice(0, 5));
       renderProducts("grid-bebes", byCat("mamaes-e-bebes").slice(0, 5));
-      renderProducts("grid-vida", byCat("vida-saudavel").slice(0, 5));
       renderProducts("grid-servicos", byCat("servicos-de-saude").slice(0, 5));
 
       // WhatsApp flutuante

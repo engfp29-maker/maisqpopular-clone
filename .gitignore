@@ -1,1 +1,7 @@
 .vercel
+.env*
+
+# Fontes locais (não versionadas)
+_conv_logo.py
+logo farmacia.jpeg
+
