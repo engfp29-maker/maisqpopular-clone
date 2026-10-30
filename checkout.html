@@ -151,8 +151,11 @@
       if (delivery === "pickup") return 0;
       return total >= FREE_SHIP_MIN ? 0 : SHIP_FEE;
     }
-    function payDesconto(total, pay) {
-      return pay === "pix" ? Math.round(total * PIX_DISCOUNT) : 0;
+    /* Mesma regra do servidor (pricing.js): o Pix incide sobre o subtotal
+       JÁ com o desconto do cupom, não sobre o subtotal cheio. */
+    function payDesconto(total, pay, cupomDesc = 0) {
+      if (pay !== "pix") return 0;
+      return Math.round(Math.max(0, total - cupomDesc) * PIX_DISCOUNT);
     }
 
     function currentDelivery() {
@@ -169,8 +172,8 @@
       const delivery = currentDelivery();
       const pay = currentPay();
       const frete = freteTotal(total, delivery);
-      const desc = payDesconto(total, pay);
       const cupom = couponDiscount(total);
+      const desc = payDesconto(total, pay, cupom.desc);
       const final = Math.max(0, total + frete - desc - cupom.desc);
 
       const itensHtml = ids.map((id) => {
@@ -257,8 +260,8 @@
       const pay = currentPay();
       const total = cartTotal();
       const frete = freteTotal(total, delivery);
-      const desc = payDesconto(total, pay);
       const cupom = couponDiscount(total);
+      const desc = payDesconto(total, pay, cupom.desc);
       return {
         id: "MQ" + Date.now().toString().slice(-8),
         date: new Date().toISOString(),

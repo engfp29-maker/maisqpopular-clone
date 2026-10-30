@@ -56,6 +56,21 @@ test("cupom percentual aplicado no subtotal", () => {
   assert.strictEqual(r.couponDesc, Math.round(2980 * 0.05));
 });
 
+/* Regressão: o checkout calculava o Pix sobre o subtotal cheio e somava os
+   descontos fora de ordem, exibindo R$ 26,30 enquanto o pedido gravado ficava
+   R$ 26,34. O Pix incide sobre o subtotal pós-cupom. */
+test("Pix + cupom: total exibido bate com o total gravado", () => {
+  const r = priceOrder(
+    { items: [{ id: "med-03", qty: 1 }], delivery: "delivery", pay: "pix", coupon: "QPOPULAR5" },
+    cat
+  );
+  assert.ok(r.ok);
+  assert.strictEqual(r.subtotal, 1490);
+  assert.strictEqual(r.couponDesc, 75);
+  assert.strictEqual(r.pixDesc, 71); // 5% de (1490 - 75) = 70,75 -> 71
+  assert.strictEqual(r.total, 2634); // 1490 - 75 + 1290 - 71
+});
+
 test("cupom inexistente é rejeitado", () => {
   const r = priceOrder({ ...base, coupon: "NAOEXISTE" }, cat);
   assert.strictEqual(r.ok, false);
