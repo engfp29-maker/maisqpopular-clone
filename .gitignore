@@ -9,3 +9,8 @@ logo farmacia.jpeg
 __pycache__/
 *.pyc
 
+# Pedidos gravados em disco (dados de cliente, nunca versionar)
+.orders/
+.orders-dev/
+*.ndjson
+

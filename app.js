@@ -145,10 +145,80 @@ async function validateCouponRemote(code, subtotal = cartTotal()) {
  * recalculados no servidor). Se a API estiver indisponível, devolve
  * null para o chamador seguir com o fluxo local (WhatsApp).
  */
+/* Resultado possíveis:
+   { ok:true, order }            -> pedido aceito pelo servidor
+   { ok:false, reject:true }     -> regra de negócio recusou (mostrar erro)
+   { ok:false, offline:true }    -> servidor inacessível (modo de contingência) */
 async function submitOrderRemote(payload) {
   const res = await apiPost("/api/order", payload);
-  if (res.offline || !res.ok) return { ok: false, error: res.data.error || "" };
-  return { ok: true, order: res.data.order };
+  if (res.ok) return { ok: true, order: res.data.order };
+  if (res.offline) return { ok: false, offline: true };
+  return { ok: false, reject: true, error: res.data.error || "" };
+}
+
+/* ---------- Reenvio de pedidos pendentes ----------
+   Pedido salvo como `pending` aconteceu quando o servidor estava fora.
+   A cada carregamento de página tentamos enviá-lo de novo. Se o servidor
+   recusar por regra de negócio, o pedido deixa de ser reenviado (não adianta
+   insistir) e continua visível como "não enviado". */
+const SYNC_KEY = "mq_last_sync";
+
+function getPendingOrders() {
+  try {
+    const hist = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
+    return Array.isArray(hist) ? hist.filter((o) => o && o.pending === true) : [];
+  } catch { return []; }
+}
+
+let syncing = false;
+async function syncPendingOrders() {
+  if (syncing) return;
+  if (!navigator.onLine) return;
+  const pendentes = getPendingOrders();
+  if (!pendentes.length) return;
+  // Evita tentar de novo a cada navegação seguida (mínimo 60s entre rodadas).
+  const last = Number(sessionStorage.getItem(SYNC_KEY) || 0);
+  if (Date.now() - last < 60000) return;
+  sessionStorage.setItem(SYNC_KEY, String(Date.now()));
+
+  syncing = true;
+  let enviados = 0;
+  try {
+    for (const ordem of pendentes) {
+      const res = await submitOrderRemote({
+        items: ordem.items.map((i) => ({ id: i.id, qty: i.qty })),
+        delivery: ordem.delivery,
+        pay: ordem.pay,
+        customer: ordem.customer,
+        coupon: ordem.coupon,
+        address: ordem.address,
+        obs: ordem.obs,
+        // Reenvio: o pedido já existia antes, então não vale promoção de 1ª compra.
+        hasPreviousOrder: true,
+      });
+      if (res.offline) break; // rede caiu de novo: tenta na próxima navegação
+      try {
+        const hist = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
+        const idx = hist.findIndex((o) => o && o.id === ordem.id);
+        if (idx === -1) continue;
+        if (res.ok && res.order) {
+          hist[idx] = { ...ordem, ...res.order, server: true, pending: false,
+            desc: (res.order.couponDesc || 0) + (res.order.pixDesc || 0), syncError: undefined };
+          enviados++;
+        } else if (res.reject) {
+          // Recusa definitiva: para de tentar, registra o motivo.
+          hist[idx] = { ...ordem, pending: false, server: false,
+            syncError: res.error || "Pedido recusado pela farmácia." };
+        }
+        localStorage.setItem(ORDERS_KEY, JSON.stringify(hist.slice(0, 30)));
+      } catch {}
+    }
+  } finally {
+    syncing = false;
+  }
+  if (enviados) {
+    document.dispatchEvent(new CustomEvent("mq:orders-synced", { detail: { enviados } }));
+  }
 }
 
 /* ---------- Fidelidade +Q ---------- */
@@ -325,4 +395,11 @@ document.addEventListener("DOMContentLoaded", () => {
   initSearch();
   initCatnavHint();
   updateCartBadge();
+
+  // Pedidos que ficaram pendentes por queda de conexão: reenvia em segundo plano.
+  syncPendingOrders();
+  window.addEventListener("online", () => {
+    sessionStorage.removeItem(SYNC_KEY);
+    syncPendingOrders();
+  });
 });

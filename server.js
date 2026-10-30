@@ -29,6 +29,7 @@ const MIME = {
 /** Carrega handlers de api/ (com res.status().json() no estilo Vercel). */
 function runApi(handler, req, res, body) {
   req.body = body;
+  req.query = req.query || {};
   res.status = (code) => {
     res.statusCode = code;
     return res;
@@ -84,6 +85,8 @@ const server = http.createServer(async (req, res) => {
     const raw = await readRaw(req);
     let body = {};
     try { body = raw ? JSON.parse(raw) : {}; } catch { body = {}; }
+    // Emula o req.query da Vercel para os handlers funcionarem igual nos dois.
+    req.query = Object.fromEntries(url.searchParams.entries());
     delete require.cache[require.resolve(file)];
     return runApi(require(file), req, res, body);
   }

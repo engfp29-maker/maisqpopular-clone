@@ -82,9 +82,13 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const params = new URLSearchParams(location.search);
-      const cat = params.get("cat");
       const q = params.get("q");
-      const slug = cat || "ofertas";
+      const slug = canonCat(params.get("cat")) || "ofertas";
+
+      // Link antigo (ex.: ?cat=marcas-exclusivas) → corrige a barra de endereços
+      if (!q && params.get("cat") && params.get("cat") !== slug) {
+        history.replaceState(null, "", `categoria.html?cat=${slug}`);
+      }
 
       let title, sub, base;
       if (q) {

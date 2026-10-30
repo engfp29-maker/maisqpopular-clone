@@ -66,18 +66,29 @@
       const st = statusOf(order.date);
       const nItens = order.items.reduce((a, i) => a + i.qty, 0);
       const entrega = order.delivery === "pickup" ? "🏬 Clique e Retire" : "🚚 Entrega em casa";
+      // Pedido que não chegou ao servidor (queda de conexão) não pode ser exibido
+      // como "Confirmado": mostra o aviso e o botão para enviar pelo WhatsApp.
+      const pendente = order.pending === true;
+      // Recusado na sincronização (servidor respondeu, mas barrou o pedido).
+      const recusado = !pendente && order.server === false && !!order.syncError;
+      const problema = pendente || recusado;
+      const aviso = recusado
+        ? `⚠️ Este pedido não foi aceito pela farmácia: ${order.syncError} Fale com a gente pelo WhatsApp.`
+        : `⚠️ Este pedido não foi enviado para a farmácia — a conexão falhou ao finalizar. Toque em <strong>Falar no WhatsApp</strong> para confirmar com a gente.`;
       return `
-        <article class="order-card">
+        <article class="order-card${problema ? " oc-pending" : ""}">
           <header class="oc-head">
             <div>
               <strong class="oc-id">${order.id}</strong>
               <small class="oc-date">${fmtDate(order.date)}</small>
             </div>
-            <span class="oc-status s${st}">${STATUS[st]}</span>
+            <span class="oc-status s${pendente ? "p" : st}">${pendente ? "Não enviado" : recusado ? "Não aceito" : STATUS[st]}</span>
           </header>
-          <div class="oc-track">
+          ${problema
+            ? `<p class="oc-alert">${aviso}</p>`
+            : `<div class="oc-track">
             ${STATUS.map((s, i) => `<span class="dot ${i <= st ? "on" : ""}">${s}</span>`).join("")}
-          </div>
+          </div>`}
           <div class="oc-items">${order.items.map((it) => `<span class="oc-chip">${it.qty}× ${it.name}</span>`).join("")}</div>
           <footer class="oc-foot">
             <div class="oc-meta">
@@ -107,6 +118,12 @@
       document.getElementById("f-legal").textContent =
         `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
       draw();
+
+      // Se o reenvio em segundo plano concluiu, redesenha a lista.
+      document.addEventListener("mq:orders-synced", () => {
+        draw();
+        toast("Pedido enviado para a farmácia!");
+      });
 
       document.addEventListener("click", (e) => {
         const rep = e.target.closest("[data-repeat]");

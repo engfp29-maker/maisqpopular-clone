@@ -6,8 +6,13 @@
    ============================================================ */
 
 const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 const { PRODUCTS, COUPONS, LOYALTY } = require("../data.js");
 const { priceOrder, cleanCustomer } = require("../pricing.js");
+
+const ORDER_DIR = process.env.ORDER_DIR || path.join("/tmp", "maisqpopular-orders");
+const ORDER_FILE = path.join(ORDER_DIR, "orders.ndjson");
 
 function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
@@ -94,10 +99,22 @@ module.exports = function handler(req, res) {
     points,
   };
 
-  // Persistência: hoje o pedido vive no cliente (localStorage) e pode ser
-  // enviado pelo WhatsApp. Quando houver banco (ex.: DATABASE_URL),
-  // gravar aqui antes de responder.
-  console.log(`[order] ${order.id} total=${order.total} itens=${order.items.length}`);
+  // Persistência: grava o pedido em disco (NDJSON, append-only).
+  // ATENÇÃO: na Vercel o /tmp é efêmero e não é compartilhado entre
+  // instâncias. Serve como registro imediato/log, não como banco.
+  // Para produção com histórico confiável, troque por um banco (ver README).
+  let persisted = false;
+  try {
+    fs.mkdirSync(ORDER_DIR, { recursive: true });
+    fs.appendFileSync(ORDER_FILE, JSON.stringify(order) + "\n", "utf8");
+    persisted = true;
+  } catch (err) {
+    console.error(`[order] falha ao persistir ${order.id}:`, err.message);
+  }
 
-  return res.status(201).json({ ok: true, order });
+  console.log(
+    `[order] ${order.id} total=${order.total} itens=${order.items.length} persistido=${persisted}`
+  );
+
+  return res.status(201).json({ ok: true, order: { ...order, persisted } });
 };

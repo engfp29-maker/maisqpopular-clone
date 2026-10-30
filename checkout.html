@@ -338,6 +338,13 @@
       };
     }
 
+    function hasPreviousOrder() {
+      try {
+        const hist = JSON.parse(localStorage.getItem("mq_orders")) || [];
+        return Array.isArray(hist) && hist.some((o) => o && o.server === true);
+      } catch { return false; }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("f-legal").textContent =
         `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
@@ -434,8 +441,21 @@
         });
         return;
       }
-      if (res.error) { toast(res.error); return; } // erro de regra de negócio
-      saveOrder(local); // API offline: fluxo local
+      // O servidor recusou por regra de negócio (cupom inválido, item fora de
+      // estoque, endereço incompleto...). Não é seguro seguir com um pedido
+      // apenas local: o cliente acharia que comprou algo que não foi aceito.
+      if (res.reject) {
+        toast(res.error || "Não foi possível registrar o pedido.");
+        return;
+      }
+      // Servidor inacessível (rede fora / deploy em andamento): contingência.
+      // O pedido fica como pendente de sincronização.
+      saveOrder({
+        ...local,
+        server: false,
+        pending: true,
+        syncError: "Pedido não enviado ao servidor. Envie pelo WhatsApp para confirmar.",
+      });
     }
   </script>
 </body>

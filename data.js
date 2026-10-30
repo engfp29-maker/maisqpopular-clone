@@ -30,7 +30,7 @@ const CATEGORIES = [
   { slug: "higiene-pessoal", name: "Higiene pessoal", icon: "🧼" },
   { slug: "servicos-de-saude", name: "Serviços de Saúde", icon: "🩺" },
   { slug: "conveniencia", name: "Conveniência", icon: "🛒" },
-  { slug: "marcas-exclusivas", name: "Marcas Exclusivas", icon: "⭐" },
+  { slug: "vitaminas-e-suplementos", name: "Vitaminas e Suplementos", icon: "🍊" },
 ];
 
 /* Departamentos (navegação por imagem) */
@@ -38,12 +38,12 @@ const DEPARTMENTS = [
   { name: "Ofertas", slug: "ofertas", icon: "🔥" },
   { name: "Skincare", slug: "dermo-e-beleza", icon: "🧴" },
   { name: "Azia e Gastrite", slug: "medicamentos-e-saude", icon: "🫗" },
-  { name: "Vitaminas", slug: "medicamentos-e-saude", icon: "💊" },
+  { name: "Vitaminas", slug: "vitaminas-e-suplementos", icon: "💊" },
   { name: "Protetor Solar Facial", slug: "dermo-e-beleza", icon: "☀️" },
 ];
 
 /* Catálogo de produtos. price em centavos; oldPrice opcional (de/por).
-   CURATED = itens escritos à mão (serviços, marcas exclusivas, destaques).
+   CURATED = itens escritos à mão (serviços, vitaminas, destaques).
    PRODUCTS_EXCEL = catálogo real da planilha, gerado em produtos.js
    (abas REFERÊNCIA = éticos, GENÉRICO, SIMILAR e PERFUMARIA).          */
 const CURATED = [
@@ -66,6 +66,7 @@ const CURATED = [
   { id: "der-06", cat: "dermo-e-beleza", name: "Condicionador hidratante 400ml", tag: "Cabelos", ico: "🧴", price: 2190, rating: 4.5, reviews: 287, rx: false },
   { id: "der-07", cat: "dermo-e-beleza", name: "Colônia feminina 100ml", tag: "Perfumaria", ico: "🌸", price: 8990, oldPrice: 11990, rating: 4.8, reviews: 355, rx: false },
   { id: "der-08", cat: "dermo-e-beleza", name: "Esmalte longa duração", tag: "Perfumaria", ico: "💅", price: 990, oldPrice: 1590, rating: 4.5, reviews: 198, rx: false },
+  { id: "der-09", cat: "dermo-e-beleza", name: "Linha +Q Cuidado hidratante corporal", tag: "Marca exclusiva", ico: "🧴", price: 2990, oldPrice: 3990, rating: 4.8, reviews: 312, rx: false },
 
   // Mamães e bebês
   { id: "beb-01", cat: "mamaes-e-bebes", name: "Fralda infantil pacote econômico M", tag: "Vários tamanhos", ico: "🧷", price: 4990, oldPrice: 6490, rating: 4.8, reviews: 912, rx: false },
@@ -73,6 +74,7 @@ const CURATED = [
   { id: "beb-03", cat: "mamaes-e-bebes", name: "Sabonete líquido infantil 400ml", tag: "Infantil", ico: "🧴", price: 1890, rating: 4.7, reviews: 408, rx: false },
   { id: "beb-04", cat: "mamaes-e-bebes", name: "Mamadeira anticólica 260ml", tag: "Bebê", ico: "🍼", price: 3990, oldPrice: 4990, rating: 4.6, reviews: 233, rx: false },
   { id: "beb-05", cat: "mamaes-e-bebes", name: "Pomada para assadura 45g", tag: "Bebê", ico: "🧴", price: 2590, oldPrice: 3290, rating: 4.9, reviews: 517, rx: false },
+  { id: "beb-06", cat: "mamaes-e-bebes", name: "+Q Infantil kit shampoo e sabonete", tag: "Marca exclusiva", ico: "🍼", price: 3490, oldPrice: 4490, rating: 4.7, reviews: 208, rx: false },
 
   // Higiene pessoal
   { id: "hig-01", cat: "higiene-pessoal", name: "Creme dental 90g", tag: "Higiene", ico: "🪥", price: 790, oldPrice: 1090, rating: 4.7, reviews: 640, rx: false },
@@ -83,12 +85,12 @@ const CURATED = [
   { id: "hig-06", cat: "higiene-pessoal", name: "Fralda geriátrica pacote G", tag: "Cuidado do Idoso", ico: "🧓", price: 5990, oldPrice: 7490, rating: 4.8, reviews: 366, rx: false },
 
   // Vitaminas e Suplementos
-  { id: "sau-01", cat: "medicamentos-e-saude", name: "Vitamina C 1g efervescente 10 comprimidos", tag: "Vitaminas", ico: "🍊", price: 1990, oldPrice: 2690, rating: 4.8, reviews: 745, rx: false },
-  { id: "sau-02", cat: "medicamentos-e-saude", name: "Polivitamínico A-Z 60 cápsulas", tag: "Vitaminas", ico: "💊", price: 4590, oldPrice: 5990, rating: 4.9, reviews: 903, rx: false },
-  { id: "sau-03", cat: "medicamentos-e-saude", name: "Whey protein concentrado 900g", tag: "Suplementos", ico: "🥤", price: 14990, oldPrice: 18990, rating: 4.7, reviews: 512, rx: false },
-  { id: "sau-04", cat: "medicamentos-e-saude", name: "Ômega 3 1000mg 60 cápsulas", tag: "Suplementos", ico: "🐟", price: 5990, oldPrice: 7990, rating: 4.8, reviews: 388, rx: false },
-  { id: "sau-05", cat: "medicamentos-e-saude", name: "Colágeno hidrolisado 300g", tag: "Suplementos", ico: "✨", price: 7990, oldPrice: 9990, rating: 4.7, reviews: 621, rx: false },
-  { id: "sau-06", cat: "medicamentos-e-saude", name: "Emagrecedor termogênico 60 cápsulas", tag: "Emagrecedores", ico: "⚖️", price: 9990, oldPrice: 12990, rating: 4.4, reviews: 245, rx: false },
+  { id: "sau-01", cat: "vitaminas-e-suplementos", name: "Vitamina C 1g efervescente 10 comprimidos", tag: "Vitaminas", ico: "🍊", price: 1990, oldPrice: 2690, rating: 4.8, reviews: 745, rx: false },
+  { id: "sau-02", cat: "vitaminas-e-suplementos", name: "Polivitamínico A-Z 60 cápsulas", tag: "Vitaminas", ico: "💊", price: 4590, oldPrice: 5990, rating: 4.9, reviews: 903, rx: false },
+  { id: "sau-03", cat: "vitaminas-e-suplementos", name: "Whey protein concentrado 900g", tag: "Suplementos", ico: "🥤", price: 14990, oldPrice: 18990, rating: 4.7, reviews: 512, rx: false },
+  { id: "sau-04", cat: "vitaminas-e-suplementos", name: "Ômega 3 1000mg 60 cápsulas", tag: "Suplementos", ico: "🐟", price: 5990, oldPrice: 7990, rating: 4.8, reviews: 388, rx: false },
+  { id: "sau-05", cat: "vitaminas-e-suplementos", name: "Colágeno hidrolisado 300g", tag: "Suplementos", ico: "✨", price: 7990, oldPrice: 9990, rating: 4.7, reviews: 621, rx: false },
+  { id: "sau-06", cat: "vitaminas-e-suplementos", name: "Emagrecedor termogênico 60 cápsulas", tag: "Emagrecedores", ico: "⚖️", price: 9990, oldPrice: 12990, rating: 4.4, reviews: 245, rx: false },
 
   // Conveniência
   { id: "con-01", cat: "conveniencia", name: "Álcool em gel 70% 500ml", tag: "Cuidados", ico: "🧪", price: 1590, oldPrice: 2190, rating: 4.9, reviews: 812, rx: false },
@@ -102,10 +104,8 @@ const CURATED = [
   { id: "ser-02", cat: "servicos-de-saude", name: "Aplicação de injetáveis", tag: "Serviço na loja", ico: "💉", price: 2000, rating: 4.9, reviews: 84, rx: false, service: true },
   { id: "ser-03", cat: "servicos-de-saude", name: "Teste de glicemia", tag: "Serviço na loja", ico: "🩸", price: 1500, rating: 4.8, reviews: 97, rx: false, service: true },
 
-  // Marcas Exclusivas
-  { id: "mar-01", cat: "marcas-exclusivas", name: "Linha +Q Cuidado hidratante corporal", tag: "Marca exclusiva", ico: "🧴", price: 2990, oldPrice: 3990, rating: 4.8, reviews: 312, rx: false },
-  { id: "mar-02", cat: "marcas-exclusivas", name: "+Q Infantil kit shampoo e sabonete", tag: "Marca exclusiva", ico: "🍼", price: 3490, oldPrice: 4490, rating: 4.7, reviews: 208, rx: false },
-  { id: "mar-03", cat: "marcas-exclusivas", name: "+Q Saúde vitamina C 500mg 30 comprimidos", tag: "Marca exclusiva", ico: "🍊", price: 1590, oldPrice: 2190, rating: 4.9, reviews: 456, rx: false },
+  // Marcas exclusivas da linha +Q Saúde (exibidas em Vitaminas e Suplementos)
+  { id: "vit-01", cat: "vitaminas-e-suplementos", name: "+Q Saúde vitamina C 500mg 30 comprimidos", tag: "Marca exclusiva", ico: "🍊", price: 1590, oldPrice: 2190, rating: 4.9, reviews: 456, rx: false },
 ]; // fim de CURATED
 
 /* Catálogo da planilha (produtos.js). No browser o arquivo já foi carregado
@@ -130,6 +130,19 @@ const PRODUCT_INDEX = new Map(PRODUCTS.map((p) => [p.id, p]));
 const byId = (id) => PRODUCT_INDEX.get(id);
 const byCat = (slug) => (slug === "ofertas" ? PRODUCTS.filter((p) => p.oldPrice) : PRODUCTS.filter((p) => p.cat === slug));
 const catName = (slug) => (CATEGORIES.find((c) => c.slug === slug) || {}).name || "Produtos";
+
+/* Slugs antigos que ainda podem estar salvos em links, favoritos ou
+   resultados de busca → slug novo equivalente. */
+const CAT_ALIASES = {
+  "marcas-exclusivas": "vitaminas-e-suplementos",
+};
+
+/* Normaliza um slug vindo da URL. Retorna null se não existir. */
+const canonCat = (slug) => {
+  if (!slug) return null;
+  const s = CAT_ALIASES[slug] || slug;
+  return CATEGORIES.some((c) => c.slug === s) ? s : null;
+};
 
 const brl = (cents) =>
   (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -165,12 +178,13 @@ if (typeof window !== "undefined") {
   window.byId = byId;
   window.byCat = byCat;
   window.catName = catName;
+  window.canonCat = canonCat;
   window.brl = brl;
   window.discountPct = discountPct;
 }
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     STORE, CATEGORIES, DEPARTMENTS, PRODUCTS, COUPONS, LOYALTY,
-    byId, byCat, catName, brl, discountPct, wpp,
+    byId, byCat, catName, canonCat, brl, discountPct, wpp,
   };
 }

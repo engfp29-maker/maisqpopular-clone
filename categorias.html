@@ -83,7 +83,7 @@
       const params = new URLSearchParams(location.search);
       // Categoria inicial: ?cat=... ou, sem parâmetro, mostra todas.
       const catParam = params.get("cat");
-      const slug = catParam && CATEGORIES.some((c) => c.slug === catParam) ? catParam : "todas";
+      const slug = (catParam && canonCat(catParam)) || "todas";
 
       // Menu lateral de categorias com contagem ("ofertas" é recorte de preço, fica fora da lista)
       document.getElementById("filter-list").innerHTML =
