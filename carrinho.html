@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Minha sacola | Farmácia Mais Que Popular</title>
+  <meta name="robots" content="noindex, follow" />
+  <link rel="icon" href="logo.webp" type="image/webp" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -73,23 +75,65 @@
       }).join("");
 
       const total = cartTotal();
+      const cupom = couponDiscount(total);
       const frete = total >= 15000 ? 0 : 1290;
-      const totalComFrete = total + frete;
+      const baseComDesconto = Math.max(0, total - cupom.desc);
+      const totalComFrete = baseComDesconto + frete;
+      const pontos = Math.floor(baseComDesconto / 100) * (window.LOYALTY?.pointsPerReal ?? 1);
 
       document.getElementById("summary").innerHTML = `
         <h3>Resumo do pedido</h3>
         <div class="sum-row"><span>Subtotal</span><span>${brl(total)}</span></div>
+        ${cupom.desc ? `<div class="sum-row" style="color:var(--green);"><span>Cupom ${cupom.code}</span><span>− ${brl(cupom.desc)}</span></div>` : ""}
         <div class="sum-row"><span>Entrega</span><span>${frete === 0 ? "Grátis" : brl(frete)}</span></div>
-        ${frete !== 0 ? `<div class="sum-row" style="color:#0f9d58;"><span>Faltam ${brl(15000 - total)} p/ frete grátis</span><span></span></div>` : ""}
+        ${frete !== 0 ? `<div class="sum-row" style="color:var(--green);"><span>Faltam ${brl(15000 - total)} p/ frete grátis</span><span></span></div>` : ""}
         <div class="sum-row total"><span>Total</span><span>${brl(totalComFrete)}</span></div>
+        <div class="coupon-box">
+          <label for="coupon">Cupom de desconto</label>
+          <div class="coupon-input">
+            <input id="coupon" placeholder="Digite o código" value="${cupom.code}" autocomplete="off" />
+            ${cupom.code
+              ? `<button class="btn btn-ghost btn-sm" id="coupon-remove" type="button">Remover</button>`
+              : `<button class="btn btn-dark btn-sm" id="coupon-apply" type="button">Aplicar</button>`}
+          </div>
+          <small id="coupon-msg" class="${cupom.valid ? "ok" : cupom.code ? "err" : ""}">${
+            cupom.valid ? "Cupom aplicado com sucesso." : cupom.code ? "Cupom não aplicável ao seu pedido." : ""
+          }</small>
+        </div>
+        <p class="points-note">⭐ Você ganha <strong>${pontos} pontos +Q</strong> neste pedido</p>
         <a class="btn btn-primary btn-block btn-lg" href="checkout.html" id="checkout">Finalizar pedido</a>
         <button class="btn btn-ghost btn-block" id="checkout-wpp" type="button" style="margin-top:10px;">Finalizar pelo WhatsApp</button>
         <a class="btn btn-ghost btn-block" href="index.html" style="margin-top:10px;">Continuar comprando</a>
       `;
 
+      const applyBtn = document.getElementById("coupon-apply");
+      if (applyBtn) {
+        applyBtn.onclick = async () => {
+          const input = document.getElementById("coupon");
+          const val = input.value.trim().toUpperCase();
+          if (!val) { toast("Informe um código de cupom."); return; }
+
+          applyBtn.disabled = true;
+          applyBtn.textContent = "...";
+          const res = await validateCouponRemote(val, total);
+          applyBtn.disabled = false;
+          applyBtn.textContent = "Aplicar";
+
+          if (!res.ok) { toast(res.error || "Cupom inválido ou expirado."); return; }
+          setCouponCode(res.code);
+          toast(`Cupom ${res.code} aplicado: − ${brl(res.desc)}`);
+          draw();
+        };
+        const input = document.getElementById("coupon");
+        input.onkeydown = (e) => { if (e.key === "Enter") applyBtn.click(); };
+        input.addEventListener("input", () => { input.value = input.value.toUpperCase(); });
+      }
+      const removeBtn = document.getElementById("coupon-remove");
+      if (removeBtn) removeBtn.onclick = () => { setCouponCode(""); toast("Cupom removido"); draw(); };
+
       const itens = ids.map((id) => `• ${cart[id]}x ${byId(id).name}`).join("\n");
       document.getElementById("checkout-wpp").onclick = () =>
-        window.open(wpp(`Olá! Quero finalizar meu pedido:\n\n${itens}\n\nSubtotal: ${brl(total)}\nEntrega: ${frete === 0 ? "Grátis" : brl(frete)}\nTotal: ${brl(totalComFrete)}`), "_blank");
+        window.open(wpp(`Olá! Quero finalizar meu pedido:\n\n${itens}\n\nSubtotal: ${brl(total)}${cupom.desc ? `\nCupom ${cupom.code}: − ${brl(cupom.desc)}` : ""}\nEntrega: ${frete === 0 ? "Grátis" : brl(frete)}\nTotal: ${brl(totalComFrete)}`), "_blank");
       document.getElementById("wpp").href = wpp("Olá! Vim pelo site e queria fazer um pedido.");
     }
 

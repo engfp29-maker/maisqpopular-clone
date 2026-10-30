@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Produto | Farmácia Mais Que Popular</title>
+  <meta name="description" content="Detalhes do produto na Farmácia Mais Que Popular. Compre com entrega no seu bairro ou clique e retire." />
+  <link rel="canonical" href="https://maisqpopular-clone.vercel.app/produto.html" />
+  <link rel="icon" href="logo.webp" type="image/webp" />
+  <meta property="og:type" content="product" />
+  <meta property="og:site_name" content="Farmácia Mais Que Popular" />
+  <meta property="og:image" content="logo.webp" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -47,6 +54,12 @@
       const off = discountPct(p);
 
       document.title = p.name + " | Farmácia Mais Que Popular";
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.content = `${p.name} (${p.tag}) na Farmácia Mais Que Popular por ${p.service && p.price === 0 ? "grátis" : brl(p.price)}. Entrega em Belém ou clique e retire.`;
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.content = `${p.name} | Farmácia Mais Que Popular`;
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.href = `${location.origin}${location.pathname}?id=${p.id}`;
       document.getElementById("crumb").innerHTML =
         `<a href="index.html">Início</a> › <a href="categoria.html?cat=${p.cat}">${catName(p.cat)}</a> › <span>${p.name}</span>`;
 

@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Categoria | Farmácia Mais Que Popular</title>
+  <meta name="description" content="Explore as categorias da Farmácia Mais Que Popular: medicamentos e saúde, dermo e beleza, mamães e bebês, vitaminas e muito mais." />
+  <link rel="icon" href="logo.webp" type="image/webp" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Farmácia Mais Que Popular" />
+  <meta property="og:image" content="logo.webp" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -100,6 +106,19 @@
       document.getElementById("cat-sub").textContent = sub || "";
       document.getElementById("crumb").innerHTML =
         `<a href="index.html">Início</a> › <span>${title}</span>`;
+
+      // SEO dinâmico
+      document.title = `${title} | Farmácia Mais Que Popular`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.content = sub || `Confira ${title} na Farmácia Mais Que Popular, com entrega no Tapanã, Pratinha, Parque Verde e Icoaraci.`;
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.content = `${title} | Farmácia Mais Que Popular`;
+      if (!q) {
+        const canonical = document.querySelector('link[rel="canonical"]') || document.createElement("link");
+        canonical.rel = "canonical";
+        canonical.href = `${location.origin}${location.pathname}?cat=${slug}`;
+        if (!canonical.parentNode) document.head.appendChild(canonical);
+      }
 
       document.getElementById("wpp").href =
         wpp(`Olá! Vim pelo site e queria consultar sobre: ${title}.`);

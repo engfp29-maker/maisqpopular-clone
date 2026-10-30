@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Finalizar pedido | Farmácia Mais Que Popular</title>
+  <meta name="robots" content="noindex, follow" />
+  <link rel="icon" href="logo.webp" type="image/webp" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -100,6 +102,14 @@
             </label>
           </div>
           <div class="field" style="margin-top:14px;">
+            <label for="coupon">Cupom de desconto (opcional)</label>
+            <div class="coupon-row">
+              <input id="coupon" placeholder="Ex.: QPOPULAR5" autocomplete="off" uppercase />
+              <button class="btn btn-ghost" id="apply-coupon" type="button">Aplicar</button>
+            </div>
+            <small id="coupon-msg" class="coupon-msg" hidden></small>
+          </div>
+          <div class="field" style="margin-top:14px;">
             <label for="obs">Observação do pedido (opcional)</label>
             <input id="obs" placeholder="Ex.: entregar após as 18h" />
           </div>
@@ -160,7 +170,8 @@
       const pay = currentPay();
       const frete = freteTotal(total, delivery);
       const desc = payDesconto(total, pay);
-      const final = total + frete - desc;
+      const cupom = couponDiscount(total);
+      const final = Math.max(0, total + frete - desc - cupom.desc);
 
       const itensHtml = ids.map((id) => {
         const p = byId(id);
@@ -173,6 +184,7 @@
         <hr class="sum-div" />
         <div class="sum-row"><span>Subtotal</span><span>${brl(total)}</span></div>
         <div class="sum-row"><span>Entrega</span><span>${delivery === "pickup" ? "Retirada" : frete === 0 ? "Grátis" : brl(frete)}</span></div>
+        ${cupom.desc ? `<div class="sum-row" style="color:#0f9d58;"><span>Cupom ${cupom.code}</span><span>− ${brl(cupom.desc)}</span></div>` : ""}
         ${desc ? `<div class="sum-row" style="color:#0f9d58;"><span>Desconto Pix (5%)</span><span>− ${brl(desc)}</span></div>` : ""}
         <div class="sum-row total"><span>Total</span><span>${brl(final)}</span></div>
         <p class="sum-note">${delivery === "delivery" && frete !== 0 ? `Faltam ${brl(FREE_SHIP_MIN - total)} para frete grátis.` : delivery === "delivery" ? "🎉 Você ganhou frete grátis!" : "Você retira no balcão."}</p>
@@ -181,6 +193,40 @@
         el.textContent = total >= FREE_SHIP_MIN ? "Grátis" : `+ ${brl(SHIP_FEE)}`;
         el.style.color = total >= FREE_SHIP_MIN ? "#0f9d58" : "var(--ink-2)";
       });
+    }
+
+    function setCouponMsg(text, ok) {
+      const el = document.getElementById("coupon-msg");
+      if (!text) { el.hidden = true; el.textContent = ""; return; }
+      el.hidden = false;
+      el.textContent = text;
+      el.classList.toggle("is-ok", !!ok);
+      el.classList.toggle("is-error", !ok);
+    }
+
+    async function applyCouponFromField() {
+      const input = document.getElementById("coupon");
+      const btn = document.getElementById("apply-coupon");
+      const raw = input.value.trim().toUpperCase();
+
+      if (!raw) { setCouponCode(""); setCouponMsg("Cupom removido."); renderSummary(); return; }
+
+      btn.disabled = true;
+      btn.textContent = "...";
+      setCouponMsg("Validando...", true);
+      const res = await validateCouponRemote(raw, cartTotal());
+      btn.disabled = false;
+      btn.textContent = "Aplicar";
+
+      if (!res.ok) {
+        setCouponCode("");
+        setCouponMsg(res.error || "Cupom inválido.", false);
+      } else {
+        setCouponCode(res.code);
+        input.value = res.code;
+        setCouponMsg(`${res.code} aplicado: − ${brl(res.desc)} (${res.descText || res.percent + "%"})`, true);
+      }
+      renderSummary();
     }
 
     function setStep(n) {
@@ -212,11 +258,14 @@
       const total = cartTotal();
       const frete = freteTotal(total, delivery);
       const desc = payDesconto(total, pay);
+      const cupom = couponDiscount(total);
       return {
         id: "MQ" + Date.now().toString().slice(-8),
         date: new Date().toISOString(),
         items: Object.entries(getCart()).map(([id, q]) => ({ id, qty: q, name: byId(id).name, price: byId(id).price })),
         delivery, pay,
+        coupon: cupom.desc ? cupom.code : "",
+        couponDesc: cupom.desc,
         address: delivery === "delivery" ? {
           cep: document.getElementById("cep").value.trim(),
           rua: document.getElementById("rua").value.trim(),
@@ -225,7 +274,7 @@
           compl: document.getElementById("compl").value.trim()
         } : null,
         obs: document.getElementById("obs").value.trim(),
-        subtotal: total, frete, desc, total: total + frete - desc
+        subtotal: total, frete, desc, total: Math.max(0, total + frete - desc - cupom.desc)
       };
     }
 
@@ -243,23 +292,79 @@
       document.querySelectorAll('input[name="delivery"], input[name="pay"]').forEach((r) =>
         r.addEventListener("change", renderSummary));
 
+      // Cupom de desconto
+      const couponInput = document.getElementById("coupon");
+      const savedCoupon = getCouponCode();
+      if (savedCoupon) couponInput.value = savedCoupon;
+      document.getElementById("apply-coupon").onclick = applyCouponFromField;
+      couponInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); applyCouponFromField(); }
+      });
+      couponInput.addEventListener("input", () => {
+        couponInput.value = couponInput.value.toUpperCase();
+      });
+      couponInput.addEventListener("blur", () => {
+        const typed = couponInput.value.trim().toUpperCase();
+        if (!typed || typed === getCouponCode()) return;
+        applyCouponFromField();
+      });
+
       document.getElementById("next").onclick = () => {
         if (!validateStep(STATE.step)) return;
         if (STATE.step < 3) { setStep(STATE.step + 1); return; }
-        const order = buildOrder();
-        localStorage.setItem("mq_last_order", JSON.stringify(order));
-        try {
-          const hist = JSON.parse(localStorage.getItem("mq_orders")) || [];
-          hist.unshift(order);
-          localStorage.setItem("mq_orders", JSON.stringify(hist.slice(0, 30)));
-        } catch {}
-        setCart({});
-        location.href = "pedido.html";
+        finalizeOrder();
       };
       document.getElementById("back").onclick = () => { if (STATE.step > 1) setStep(STATE.step - 1); };
 
       setStep(1);
     });
+
+    function saveOrder(order) {
+      localStorage.setItem("mq_last_order", JSON.stringify(order));
+      try {
+        const hist = JSON.parse(localStorage.getItem("mq_orders")) || [];
+        hist.unshift(order);
+        localStorage.setItem("mq_orders", JSON.stringify(hist.slice(0, 30)));
+      } catch {}
+      addPoints(order.total / 100);
+      setCouponCode("");
+      setCart({});
+      location.href = "pedido.html";
+    }
+
+    /** Cria o pedido no servidor (preços recalculados lá) e, se a API
+        não estiver disponível, segue com o pedido local. */
+    async function finalizeOrder() {
+      const btn = document.getElementById("next");
+      const local = buildOrder();
+      btn.disabled = true;
+      btn.textContent = "Finalizando...";
+      const payload = {
+        items: Object.entries(getCart()).map(([id, qty]) => ({ id, qty })),
+        delivery: local.delivery,
+        pay: local.pay,
+        coupon: local.coupon,
+        address: local.address,
+        obs: local.obs,
+        hasPreviousOrder: hasPreviousOrder(),
+      };
+      const res = await submitOrderRemote(payload);
+      btn.disabled = false;
+      btn.textContent = "Finalizar pedido";
+
+      if (res.ok && res.order) {
+        // Pedido oficial: id e totais definidos pelo servidor.
+        saveOrder({
+          ...local,
+          ...res.order,
+          desc: (res.order.couponDesc || 0) + (res.order.pixDesc || 0),
+          server: true,
+        });
+        return;
+      }
+      if (res.error) { toast(res.error); return; } // erro de regra de negócio
+      saveOrder(local); // API offline: fluxo local
+    }
   </script>
 </body>
 </html>

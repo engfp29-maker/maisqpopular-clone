@@ -114,14 +114,40 @@ const brl = (cents) =>
 const discountPct = (p) =>
   p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
 
-/* Exporta para uso global no browser */
-window.STORE = STORE;
-window.wpp = wpp;
-window.CATEGORIES = CATEGORIES;
-window.DEPARTMENTS = DEPARTMENTS;
-window.PRODUCTS = PRODUCTS;
-window.byId = byId;
-window.byCat = byCat;
-window.catName = catName;
-window.brl = brl;
-window.discountPct = discountPct;
+/* ---------- Cupons de desconto ----------
+   percent: desconto em % sobre o subtotal
+   min: valor mínimo do subtotal (em centavos)
+   firstOrder: só vale para o primeiro pedido do cliente           */
+const COUPONS = [
+  { code: "BEMVINDO10", percent: 10, min: 5000, firstOrder: true, desc: "10% no seu primeiro pedido (mín. R$ 50)" },
+  { code: "QPOPULAR5", percent: 5, min: 0, firstOrder: false, desc: "5% de desconto em qualquer compra" },
+  { code: "TAPANA15", percent: 15, min: 20000, firstOrder: false, desc: "15% acima de R$ 200 para o Tapanã" },
+];
+
+/* Fidelidade +Q — 1 ponto por R$ 1 e cada 100 pontos = R$ 10 (ver app.js) */
+const LOYALTY = { pointsPerReal: 1, pointsPerBlock: 100, blockValue: 1000 };
+
+/* ---------- Exporta ----------
+   No browser: globais em window.
+   No Node (api/ na Vercel): module.exports — fonte única de verdade de
+   preços e cupons, para o servidor nunca confiar no cliente.        */
+if (typeof window !== "undefined") {
+  window.COUPONS = COUPONS;
+  window.LOYALTY = LOYALTY;
+  window.STORE = STORE;
+  window.wpp = wpp;
+  window.CATEGORIES = CATEGORIES;
+  window.DEPARTMENTS = DEPARTMENTS;
+  window.PRODUCTS = PRODUCTS;
+  window.byId = byId;
+  window.byCat = byCat;
+  window.catName = catName;
+  window.brl = brl;
+  window.discountPct = discountPct;
+}
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    STORE, CATEGORIES, DEPARTMENTS, PRODUCTS, COUPONS, LOYALTY,
+    byId, byCat, catName, brl, discountPct, wpp,
+  };
+}

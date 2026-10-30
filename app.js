@@ -36,6 +36,135 @@ function updateCartBadge() {
   if (totalEl) totalEl.textContent = brl(cartTotal());
 }
 
+/* ---------- Cupom de desconto ---------- */
+const COUPON_KEY = "mq_coupon_v1";
+
+function getCouponCode() {
+  return (localStorage.getItem(COUPON_KEY) || "").trim().toUpperCase();
+}
+function setCouponCode(code) {
+  if (code) localStorage.setItem(COUPON_KEY, code.trim().toUpperCase());
+  else localStorage.removeItem(COUPON_KEY);
+}
+/**
+ * Valida um código de cupom contra o subtotal atual.
+ * @returns {{ ok: boolean, code?: string, percent?: number, desc?: number, descText?: string, error?: string }}
+ */
+function validateCoupon(code, subtotal = cartTotal()) {
+  const clean = (code || "").trim().toUpperCase();
+  if (!clean) return { ok: false, error: "Informe um código de cupom." };
+
+  const coupon = (window.COUPONS || []).find((c) => c.code === clean);
+  if (!coupon) return { ok: false, error: "Cupom inválido ou expirado." };
+
+  if (subtotal < coupon.min) {
+    return { ok: false, error: `Cupom válido a partir de ${brl(coupon.min)}.` };
+  }
+  if (coupon.firstOrder && hasPreviousOrder()) {
+    return { ok: false, error: "Este cupom vale apenas no primeiro pedido." };
+  }
+
+  return {
+    ok: true,
+    code: coupon.code,
+    percent: coupon.percent,
+    desc: Math.round(subtotal * coupon.percent / 100),
+    descText: coupon.desc,
+  };
+}
+
+/** Aplica o cupom salvo no localStorage; devolve o desconto em centavos (0 se inválido). */
+function couponDiscount(subtotal = cartTotal()) {
+  const code = getCouponCode();
+  if (!code) return { code: "", desc: 0, valid: false };
+  const res = validateCoupon(code, subtotal);
+  return { code, desc: res.ok ? res.desc : 0, valid: !!res.ok };
+}
+
+/* ---------- API (Vercel) ----------
+   O site funciona 100% offline/estático: se a API não responder
+   (ex.: abrindo o HTML direto, file://), cai no cálculo local. */
+const API = {
+  base: "",
+  timeout: 6000,
+};
+
+async function apiPost(path, payload) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), API.timeout);
+  try {
+    const res = await fetch(`${API.base}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok && data.ok !== false, status: res.status, data };
+  } catch {
+    return { ok: false, status: 0, offline: true, data: {} };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Itens da sacola no formato esperado pela API. */
+function cartItemsPayload() {
+  const c = getCart();
+  return Object.entries(c).map(([id, qty]) => ({ id, qty }));
+}
+
+/**
+ * Valida o cupom no servidor; em caso de falha de rede usa a regra local.
+ * Resolve sempre, nunca rejeita.
+ */
+async function validateCouponRemote(code, subtotal = cartTotal()) {
+  const res = await apiPost("/api/coupon", {
+    code,
+    items: cartItemsPayload(),
+    subtotal,
+    hasPreviousOrder: hasPreviousOrder(),
+  });
+  if (res.offline) return validateCoupon(code, subtotal);
+  if (res.ok) return { ok: true, ...res.data };
+  return { ok: false, error: res.data.error || "Cupom inválido ou expirado." };
+}
+
+/**
+ * Envia o pedido para a API e devolve o pedido oficial (com id e totais
+ * recalculados no servidor). Se a API estiver indisponível, devolve
+ * null para o chamador seguir com o fluxo local (WhatsApp).
+ */
+async function submitOrderRemote(payload) {
+  const res = await apiPost("/api/order", payload);
+  if (res.offline || !res.ok) return { ok: false, error: res.data.error || "" };
+  return { ok: true, order: res.data.order };
+}
+
+/* ---------- Fidelidade +Q ---------- */
+const POINTS_KEY = "mq_points_v1";
+const ORDERS_KEY = "mq_orders";
+
+function getPoints() {
+  return Number(localStorage.getItem(POINTS_KEY)) || 0;
+}
+function addPoints(amount) {
+  const total = getPoints() + Math.max(0, Math.round(amount));
+  localStorage.setItem(POINTS_KEY, String(total));
+  return total;
+}
+function pointsToReais(points = getPoints()) {
+  const cfg = window.LOYALTY || { pointsPerBlock: 100, blockValue: 1000 };
+  const blocks = Math.floor(points / cfg.pointsPerBlock);
+  return blocks * cfg.blockValue;
+}
+function hasPreviousOrder() {
+  try {
+    const hist = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
+    return hist.length > 0;
+  } catch { return false; }
+}
+
 /* ---------- Toast ---------- */
 function toast(msg) {
   let t = document.getElementById("toast");

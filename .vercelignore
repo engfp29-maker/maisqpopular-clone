@@ -1,0 +1,8 @@
+# Arquivos de desenvolvimento que não precisam ir para produção
+server.js
+test/
+.git/
+.vercel/
+node_modules/
+*.md
+.vscode/

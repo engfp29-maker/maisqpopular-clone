@@ -1,0 +1,14 @@
+{
+  "name": "maisqpopular-clone",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Farmácia Mais Que Popular — site estático com API de cupom e pedido (Vercel Functions).",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "test:pricing": "node test/pricing.test.js"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

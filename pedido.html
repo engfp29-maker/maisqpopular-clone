@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pedido confirmado | Farmácia Mais Que Popular</title>
+  <meta name="robots" content="noindex, follow" />
+  <link rel="icon" href="logo.webp" type="image/webp" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -18,6 +20,7 @@
       <h1>Pedido confirmado!</h1>
       <p class="confirm-sub">Obrigado pela preferência. Já estamos preparando sua sacola. 💙</p>
       <div class="confirm-id">Pedido <strong id="order-id">—</strong></div>
+      <div class="points-earned" id="points-earned" hidden></div>
     </div>
 
     <div class="confirm-grid" id="confirm-content" hidden>
@@ -28,6 +31,7 @@
         <div class="sum-row"><span>Subtotal</span><span id="o-sub"></span></div>
         <div class="sum-row"><span>Entrega</span><span id="o-frete"></span></div>
         <div class="sum-row" id="o-desc-row" hidden style="color:#0f9d58;"><span>Desconto</span><span id="o-desc"></span></div>
+        <div class="sum-row" id="o-coupon-row" hidden style="color:#0f9d58;"><span>Cupom</span><span id="o-coupon"></span></div>
         <div class="sum-row total"><span>Total</span><span id="o-total"></span></div>
       </section>
 
@@ -81,6 +85,14 @@
       document.getElementById("o-sub").textContent = brl(order.subtotal);
       document.getElementById("o-frete").textContent =
         order.delivery === "pickup" ? "Retirada" : order.frete === 0 ? "Grátis" : brl(order.frete);
+      const couponRow = document.getElementById("o-coupon-row");
+      if (order.coupon && order.couponDesc) {
+        couponRow.hidden = false;
+        couponRow.querySelector("span:first-child").textContent = `Cupom ${order.coupon}`;
+        document.getElementById("o-coupon").textContent = "− " + brl(order.couponDesc);
+      } else {
+        couponRow.hidden = true;
+      }
       if (order.desc) {
         document.getElementById("o-desc-row").hidden = false;
         document.getElementById("o-desc").textContent = "− " + brl(order.desc);
@@ -103,9 +115,21 @@
       const endTxt = order.address
         ? `\n\nEndereço: ${order.address.rua}, ${order.address.num}${order.address.compl ? " - " + order.address.compl : ""}, ${order.address.bairro} - CEP ${order.address.cep}`
         : "\n\nRetirada no balcão (Clique e Retire)";
+      const cupomTxt = order.couponDesc ? `\nCupom ${order.coupon}: − ${brl(order.couponDesc)}` : "";
       document.getElementById("wa").href = wpp(
-        `Olá! Acabei de fazer o pedido ${order.id} pelo site:\n\n${itensTxt}${endTxt}\n\nPagamento: ${PAY_LABEL[order.pay]}\nTotal: ${brl(order.total)}`
+        `Olá! Acabei de fazer o pedido ${order.id} pelo site:\n\n${itensTxt}${endTxt}${cupomTxt}\n\nPagamento: ${PAY_LABEL[order.pay]}\nTotal: ${brl(order.total)}`
       );
+
+      // Fidelidade +Q
+      const pts = getPoints();
+      const gainBox = document.getElementById("points-earned");
+      if (pts > 0) {
+        const credit = pointsToReais(pts);
+        gainBox.hidden = false;
+        gainBox.innerHTML = `⭐ Você tem <strong>${pts} pontos +Q</strong>${
+          credit ? ` — equivalentes a <strong>${brl(credit)}</strong> na sua próxima compra.` : ` — junte 100 pontos e ganhe R$ 10,00.`
+        }`;
+      }
 
       document.getElementById("confirm-content").hidden = false;
     });

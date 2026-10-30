@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meus pedidos | Farmácia Mais Que Popular</title>
+  <meta name="robots" content="noindex, follow" />
+  <link rel="icon" href="logo.webp" type="image/webp" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -57,7 +59,7 @@
       const endTxt = order.address
         ? `\n\nEndereço: ${order.address.rua}, ${order.address.num}${order.address.compl ? " - " + order.address.compl : ""}, ${order.address.bairro} - CEP ${order.address.cep}`
         : "\n\nRetirada no balcão (Clique e Retire)";
-      return wpp(`Olá! Sobre o pedido ${order.id}:\n\n${itensTxt}${endTxt}\n\nTotal: ${brl(order.total)}`);
+      return wpp(`Olá! Sobre o pedido ${order.id}:\n\n${itensTxt}${endTxt}\n\n${order.coupon && order.couponDesc ? `Cupom ${order.coupon}: − ${brl(order.couponDesc)}\n` : ""}Total: ${brl(order.total)}`);
     }
 
     function card(order) {
@@ -78,7 +80,10 @@
           </div>
           <div class="oc-items">${order.items.map((it) => `<span class="oc-chip">${it.qty}× ${it.name}</span>`).join("")}</div>
           <footer class="oc-foot">
-            <div class="oc-meta"><span>${entrega}</span><span>·</span><span>${PAY_LABEL[order.pay] || order.pay}</span><span>·</span><span>${nItens} ${nItens === 1 ? "item" : "itens"}</span></div>
+            <div class="oc-meta">
+              <span>${entrega}</span><span>·</span><span>${PAY_LABEL[order.pay] || order.pay}</span><span>·</span><span>${nItens} ${nItens === 1 ? "item" : "itens"}</span>
+              ${order.coupon && order.couponDesc ? `<span>·</span><span style="color:#0f9d58;font-weight:700;">Cupom ${order.coupon}</span>` : ""}
+            </div>
             <div class="oc-total">${brl(order.total)}</div>
           </footer>
           <div class="oc-actions">

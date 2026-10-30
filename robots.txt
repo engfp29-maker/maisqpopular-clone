@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /carrinho.html
+Disallow: /checkout.html
+Disallow: /pedido.html
+Disallow: /meus-pedidos.html
+Disallow: /entrar.html
+
+Sitemap: https://maisqpopular-clone.vercel.app/sitemap.xml
