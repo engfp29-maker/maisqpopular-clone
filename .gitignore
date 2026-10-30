@@ -5,3 +5,7 @@
 _conv_logo.py
 logo farmacia.jpeg
 
+# Python
+__pycache__/
+*.pyc
+

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Categorias | Farmácia Mais Que Popular</title>
+  <meta name="description" content="Navegue por todas as categorias da Farmácia Mais Que Popular: medicamentos e saúde, dermo e beleza, mamães e bebês, higiene pessoal e serviços de saúde." />
+  <link rel="icon" href="logo.webp" type="image/webp" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Farmácia Mais Que Popular" />
+  <meta property="og:image" content="logo.webp" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="wrap">
+    <div class="benefits" id="benefits"></div>
+    <nav class="crumb" id="crumb"></nav>
+
+    <div class="cat-layout">
+      <aside class="filters">
+        <h3>Categorias</h3>
+        <ul id="filter-list"></ul>
+        <div class="filters-extra">
+          <a class="filters-offers" id="offers-link" href="categorias.html?cat=ofertas">🔥 Ofertas <span id="offers-count"></span></a>
+        </div>
+      </aside>
+
+      <section>
+        <div class="cat-head">
+          <h1 id="cat-title">Categorias</h1>
+          <p id="cat-sub"></p>
+        </div>
+        <div class="cat-toolbar">
+          <label class="tb-field">
+            <span>Ordenar por</span>
+            <select id="sort">
+              <option value="rel">Relevância</option>
+              <option value="price-asc">Menor preço</option>
+              <option value="price-desc">Maior preço</option>
+              <option value="discount">Maior desconto</option>
+              <option value="name">Nome (A-Z)</option>
+            </select>
+          </label>
+          <label class="tb-field">
+            <span>Preço até</span>
+            <input type="range" id="maxprice" min="0" max="250" value="250" step="5" />
+            <output id="maxprice-out">R$ 250,00</output>
+          </label>
+          <label class="tb-check">
+            <input type="checkbox" id="only-offers" /> Só ofertas
+          </label>
+          <span class="tb-count" id="count"></span>
+        </div>
+        <div class="cat-grid" id="cat-grid"></div>
+        <nav class="pager" id="pager" aria-label="Paginação" hidden></nav>
+        <div class="empty" id="cat-empty" hidden>
+          <div class="e-ico">🔎</div>
+          <h3>Nenhum produto encontrado</h3>
+          <p>Tente ajustar os filtros ou escolher outra categoria.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <a class="wpp-float" id="wpp" target="_blank" rel="noopener" href="#">💬 Comprar pelo WhatsApp</a>
+
+  <footer>
+    <div class="foot-bottom">
+      <p id="f-legal"></p>
+    </div>
+  </footer>
+
+  <script src="produtos.js"></script><script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(location.search);
+      // Categoria inicial: ?cat=... ou, sem parâmetro, mostra todas.
+      const catParam = params.get("cat");
+      const slug = catParam && CATEGORIES.some((c) => c.slug === catParam) ? catParam : "todas";
+
+      // Menu lateral de categorias com contagem ("ofertas" é recorte de preço, fica fora da lista)
+      document.getElementById("filter-list").innerHTML =
+        `<li><a href="categorias.html"${slug === "todas" ? ' class="active"' : ""}>🗂️ Todas as categorias (${PRODUCTS.length})</a></li>` +
+        CATEGORIES.filter((c) => c.slug !== "ofertas").map((c) => {
+          const active = slug === c.slug ? ' class="active"' : "";
+          return `<li><a href="categorias.html?cat=${c.slug}"${active}>${c.icon} ${c.name} (${byCat(c.slug).length})</a></li>`;
+        }).join("");
+
+      // Atalho de ofertas (recorte de preço) com contagem e estado ativo
+      const offersLink = document.getElementById("offers-link");
+      document.getElementById("offers-count").textContent = `(${byCat("ofertas").length})`;
+      if (slug === "ofertas") offersLink.classList.add("active");
+
+      // Na categoria "ofertas" o recorte já está aplicado: o checkbox vira
+      // indicador (marcado e travado) para não sugerir um filtro sem efeito.
+      const onlyOffersBox = document.getElementById("only-offers");
+      if (slug === "ofertas") {
+        onlyOffersBox.checked = true;
+        onlyOffersBox.disabled = true;
+        onlyOffersBox.closest(".tb-check").title = "Filtro já aplicado pela categoria Ofertas";
+      }
+
+      const base = slug === "todas" ? PRODUCTS.slice() : byCat(slug);
+      const title = slug === "todas" ? "Categorias" : catName(slug);
+      const sub =
+        slug === "todas"
+          ? `Todos os ${PRODUCTS.length} produtos da farmácia em um só lugar. Use os filtros para refinar.`
+          : `Confira os produtos de ${catName(slug)}.`;
+
+      document.getElementById("cat-title").textContent = title;
+      document.getElementById("cat-sub").textContent = sub;
+      document.getElementById("crumb").innerHTML = catParam
+        ? `<a href="index.html">Início</a> › <a href="categorias.html">Categorias</a> › <span>${title}</span>`
+        : `<a href="index.html">Início</a> › <span>Categorias</span>`;
+
+      document.title = `${title} | Farmácia Mais Que Popular`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.content = sub;
+
+      document.getElementById("wpp").href =
+        wpp(`Olá! Vim pelo site e queria saber mais sobre: ${title}.`);
+
+      // Preço máximo dinâmico conforme a lista base
+      const maxInReal = Math.max(
+        50,
+        Math.ceil(Math.max(...base.map((p) => p.price), 0) / 100 / 10) * 10
+      );
+      let page = 1;
+      const slider = document.getElementById("maxprice");
+      slider.max = maxInReal;
+      slider.value = maxInReal;
+      const out = document.getElementById("maxprice-out");
+      const fmtOut = () => (out.textContent = brl(slider.value * 100));
+      fmtOut();
+
+      function apply() {
+        const sort = document.getElementById("sort").value;
+        const maxPrice = Number(slider.value) * 100;
+        const onlyOffers = document.getElementById("only-offers").checked;
+
+        let list = base.filter((p) => p.price <= maxPrice && (!onlyOffers || p.oldPrice));
+        if (sort === "price-asc") list.sort((a, b) => a.price - b.price);
+        else if (sort === "price-desc") list.sort((a, b) => b.price - a.price);
+        else if (sort === "discount") list.sort((a, b) => discountPct(b) - discountPct(a));
+        else if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+        document.getElementById("count").textContent = `${list.length} produto(s)`;
+        const grid = document.getElementById("cat-grid");
+        const empty = document.getElementById("cat-empty");
+        const pager = document.getElementById("pager");
+
+        if (!list.length) {
+          grid.hidden = true;
+          empty.hidden = false;
+          if (pager) pager.hidden = true;
+          grid.innerHTML = "";
+          return;
+        }
+        grid.hidden = false;
+        empty.hidden = true;
+
+        // Catálogo grande: página de 24 itens (a de "todas" tem ~2 mil)
+        const PER_PAGE = 24;
+        const pages = Math.ceil(list.length / PER_PAGE);
+        if (page > pages) page = pages;
+        grid.innerHTML = list.slice((page - 1) * PER_PAGE, page * PER_PAGE).map(productCard).join("");
+
+        if (pager) {
+          if (pages <= 1) { pager.hidden = true; pager.innerHTML = ""; }
+          else {
+            const btn = (label, target, disabled, current) =>
+              `<button type="button" data-page="${target}"${disabled ? " disabled" : ""}${current ? ' class="is-current" aria-current="page"' : ""}>${label}</button>`;
+            const start = Math.max(1, Math.min(page - 2, pages - 4));
+            const end = Math.min(pages, start + 4);
+            let html = btn("‹", page - 1, page === 1, false);
+            if (start > 1) html += btn("1", 1, false, page === 1) + (start > 2 ? '<span class="pager-gap">…</span>' : "");
+            for (let i = start; i <= end; i++) html += btn(i, i, false, i === page);
+            if (end < pages) html += (end < pages - 1 ? '<span class="pager-gap">…</span>' : "") + btn(pages, pages, false, page === pages);
+            html += btn("›", page + 1, page === pages, false);
+            pager.hidden = false;
+            pager.innerHTML = html;
+          }
+        }
+      }
+
+      const pagerEl = document.getElementById("pager");
+      if (pagerEl) {
+        pagerEl.addEventListener("click", (e) => {
+          const b = e.target.closest("button[data-page]");
+          if (!b || b.disabled) return;
+          page = Number(b.dataset.page);
+          apply();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      }
+
+      document.getElementById("sort").onchange = () => { page = 1; apply(); };
+      slider.oninput = () => {
+        fmtOut();
+        page = 1;
+        apply();
+      };
+      document.getElementById("only-offers").onchange = () => { page = 1; apply(); };
+      apply();
+
+      document.getElementById("f-legal").textContent =
+        `${STORE.name} · CNPJ ${STORE.cnpj} · Farmacêutica responsável: ${STORE.farmaceutica}`;
+    });
+  </script>
+</body>
+</html>

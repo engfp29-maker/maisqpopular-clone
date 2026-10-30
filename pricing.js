@@ -10,6 +10,28 @@ const PIX_DISCOUNT = 0.05;   // 5% no Pix
 const PAY_METHODS = ["pix", "credit", "debit", "money"];
 const DELIVERY_METHODS = ["delivery", "pickup"];
 
+/** Só os dígitos do telefone (ex.: "(91) 98408-7045" -> "91984087045"). */
+function onlyDigits(v) {
+  return String(v ?? "").replace(/\D/g, "");
+}
+
+/**
+ * Valida e normaliza o cliente do pedido (obrigatório: nome + WhatsApp).
+ * Usado pelo checkout e pela API para a mesma regra valer nos dois lados.
+ * @returns {{ ok: true, customer: { name: string, phone: string } } | { ok: false, error: string }}
+ */
+function cleanCustomer(c) {
+  const name = String(c?.name ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+  if (name.length < 3) return { ok: false, error: "Informe o nome de quem vai receber o pedido." };
+
+  const phone = onlyDigits(c?.phone);
+  // Celular brasileiro com DDD: 11 dígitos (9 atendendo) ou 10 (fixo antigo).
+  if (phone.length < 10 || phone.length > 13) {
+    return { ok: false, error: "Informe um WhatsApp válido com DDD. Ex.: (91) 98408-7045." };
+  }
+  return { ok: true, customer: { name, phone } };
+}
+
 /**
  * Recalcula um pedido a partir dos itens enviados pelo cliente.
  * NUNCA confia em preços vindos do cliente: busca o preço em PRODUCTS.
@@ -86,6 +108,7 @@ function priceOrder(input, catalog) {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     priceOrder,
+    cleanCustomer,
     FREE_SHIP_MIN,
     SHIP_FEE,
     PIX_DISCOUNT,

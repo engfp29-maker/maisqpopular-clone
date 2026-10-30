@@ -22,12 +22,7 @@
     <div class="benefits" id="benefits"></div>
     <nav class="crumb" id="crumb"></nav>
 
-    <div class="cat-layout">
-      <aside class="filters">
-        <h3>Categorias</h3>
-        <ul id="filter-list"></ul>
-      </aside>
-
+    <div class="cat-layout no-filters">
       <section>
         <div class="cat-head">
           <h1 id="cat-title">Produtos</h1>
@@ -52,9 +47,19 @@
           <label class="tb-check">
             <input type="checkbox" id="only-offers" /> Só ofertas
           </label>
+          <label class="tb-field" id="kind-wrap" hidden>
+            <span>Tipo</span>
+            <select id="kind">
+              <option value="">Todos os tipos</option>
+              <option value="Referência">Referência (ético)</option>
+              <option value="Genérico">Genérico</option>
+              <option value="Similar">Similar</option>
+            </select>
+          </label>
           <span class="tb-count" id="count"></span>
         </div>
         <div class="cat-grid" id="cat-grid"></div>
+        <nav class="pager" id="pager" aria-label="Paginação" hidden></nav>
         <div class="empty" id="cat-empty" hidden>
           <div class="e-ico">🔎</div>
           <h3>Nenhum produto encontrado</h3>
@@ -72,7 +77,7 @@
     </div>
   </footer>
 
-  <script src="data.js"></script>
+  <script src="produtos.js"></script><script src="data.js"></script>
   <script src="app.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -80,13 +85,6 @@
       const cat = params.get("cat");
       const q = params.get("q");
       const slug = cat || "ofertas";
-
-      // Filtros (menu lateral)
-      document.getElementById("filter-list").innerHTML =
-        CATEGORIES.map((c) => {
-          const active = (slug === c.slug) ? " class=\"active\"" : "";
-          return `<li><a href="categoria.html?cat=${c.slug}"${active}>${c.icon} ${c.name}</a></li>`;
-        }).join("");
 
       let title, sub, base;
       if (q) {
@@ -132,29 +130,89 @@
       const fmtOut = () => out.textContent = brl(slider.value * 100);
       fmtOut();
 
-      function apply() {
+      // Catálogo grande: mostrar em páginas para não renderizar ~2 mil cards de uma vez
+      const PER_PAGE = 24;
+      let page = 1;
+      const kindSel = document.getElementById("kind");
+      const kindWrap = document.getElementById("kind-wrap");
+      // O filtro por tipo (ético/genérico/similar) só faz sentido em medicamentos
+      const hasKinds = base.some((p) => p.tag && kindSel.querySelector(`option[value="${p.tag}"]`));
+      if (hasKinds) kindWrap.hidden = false;
+
+      function currentList() {
         const sort = document.getElementById("sort").value;
         const maxPrice = Number(slider.value) * 100;
         const onlyOffers = document.getElementById("only-offers").checked;
+        const kind = kindSel.value;
 
-        let list = base.filter((p) => p.price <= maxPrice && (!onlyOffers || p.oldPrice));
+        const list = base.filter((p) =>
+          p.price <= maxPrice &&
+          (!onlyOffers || p.oldPrice) &&
+          (!kind || p.tag === kind)
+        );
         if (sort === "price-asc") list.sort((a, b) => a.price - b.price);
         else if (sort === "price-desc") list.sort((a, b) => b.price - a.price);
         else if (sort === "discount") list.sort((a, b) => discountPct(b) - discountPct(a));
         else if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-
-        document.getElementById("count").textContent =
-          `${list.length} produto(s)`;
-        const grid = document.getElementById("cat-grid");
-        const empty = document.getElementById("cat-empty");
-        if (list.length) { grid.hidden = false; empty.hidden = true; grid.innerHTML = list.map(productCard).join(""); }
-        else { grid.hidden = true; empty.hidden = false; }
+        return list;
       }
 
-      document.getElementById("sort").onchange = apply;
-      slider.oninput = () => { fmtOut(); apply(); };
-      document.getElementById("only-offers").onchange = apply;
-      apply();
+      function renderPager(total) {
+        const pager = document.getElementById("pager");
+        const pages = Math.ceil(total / PER_PAGE);
+        if (pages <= 1) { pager.hidden = true; pager.innerHTML = ""; return; }
+        pager.hidden = false;
+        const btn = (label, target, disabled, current) =>
+          `<button type="button" data-page="${target}"${disabled ? " disabled" : ""}${current ? ' class="is-current" aria-current="page"' : ""}>${label}</button>`;
+        // Janela de páginas em volta da atual (evita 80 botões seguidos)
+        const start = Math.max(1, Math.min(page - 2, pages - 4));
+        const end = Math.min(pages, start + 4);
+        let html = btn("‹", page - 1, page === 1, false);
+        if (start > 1) html += btn("1", 1, false, page === 1) + (start > 2 ? '<span class="pager-gap">…</span>' : "");
+        for (let i = start; i <= end; i++) html += btn(i, i, false, i === page);
+        if (end < pages) html += (end < pages - 1 ? '<span class="pager-gap">…</span>' : "") + btn(pages, pages, false, page === pages);
+        html += btn("›", page + 1, page === pages, false);
+        pager.innerHTML = html;
+      }
+
+      function apply(resetPage) {
+        if (resetPage) page = 1;
+        const list = currentList();
+        document.getElementById("count").textContent = `${list.length} produto(s)`;
+
+        const grid = document.getElementById("cat-grid");
+        const empty = document.getElementById("cat-empty");
+        const pager = document.getElementById("pager");
+        if (!list.length) {
+          grid.hidden = true;
+          empty.hidden = false;
+          pager.hidden = true;
+          grid.innerHTML = "";
+          return;
+        }
+        empty.hidden = true;
+        grid.hidden = false;
+
+        const pages = Math.ceil(list.length / PER_PAGE);
+        if (page > pages) page = pages;
+        const slice = list.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+        grid.innerHTML = slice.map(productCard).join("");
+        renderPager(list.length);
+      }
+
+      document.getElementById("pager").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-page]");
+        if (!b || b.disabled) return;
+        page = Number(b.dataset.page);
+        apply(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      document.getElementById("sort").onchange = () => apply(true);
+      kindSel.addEventListener("change", () => apply(true));
+      slider.oninput = () => { fmtOut(); apply(true); };
+      document.getElementById("only-offers").onchange = () => apply(true);
+      apply(true);
 
       // Rodapé legal
       document.getElementById("f-legal").textContent =

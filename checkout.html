@@ -53,31 +53,51 @@
           </div>
         </section>
 
-        <!-- Etapa 2: endereço -->
+        <!-- Etapa 2: contato + endereço -->
         <section class="co-card" data-panel="2" hidden>
-          <h2>Endereço de entrega</h2>
+          <h2>Seus dados</h2>
           <div class="co-fields">
             <div class="field">
-              <label for="cep">CEP</label>
-              <input id="cep" inputmode="numeric" placeholder="66825-000" />
+              <label for="nome">Nome de quem vai receber *</label>
+              <input id="nome" placeholder="Ex.: Maria Silva" autocomplete="name" />
             </div>
             <div class="field">
-              <label for="rua">Rua / Avenida</label>
-              <input id="rua" placeholder="Ex.: Av. Augusto Montenegro" />
-            </div>
-            <div class="field field-sm">
-              <label for="num">Número</label>
-              <input id="num" inputmode="numeric" placeholder="1234" />
-            </div>
-            <div class="field">
-              <label for="bairro">Bairro</label>
-              <input id="bairro" placeholder="Tapanã" />
-            </div>
-            <div class="field">
-              <label for="compl">Complemento (opcional)</label>
-              <input id="compl" placeholder="Apto, bloco, referência" />
+              <label for="tel">WhatsApp com DDD *</label>
+              <input id="tel" inputmode="tel" placeholder="(91) 98408-7045" autocomplete="tel" />
             </div>
           </div>
+          <p class="sum-note" style="margin:10px 0 0;">Usamos o WhatsApp para avisar sobre o pedido. Não enviamos propaganda.</p>
+
+          <div id="address-block" hidden style="margin-top:18px;">
+            <h2>Endereço de entrega</h2>
+            <div class="co-fields">
+              <div class="field">
+                <label for="cep">CEP</label>
+                <input id="cep" inputmode="numeric" placeholder="66825-000" />
+              </div>
+              <div class="field">
+                <label for="rua">Rua / Avenida</label>
+                <input id="rua" placeholder="Ex.: Av. Augusto Montenegro" />
+              </div>
+              <div class="field field-sm">
+                <label for="num">Número</label>
+                <input id="num" inputmode="numeric" placeholder="1234" />
+              </div>
+              <div class="field">
+                <label for="bairro">Bairro</label>
+                <input id="bairro" placeholder="Tapanã" />
+              </div>
+              <div class="field">
+                <label for="compl">Complemento (opcional)</label>
+                <input id="compl" placeholder="Apto, bloco, referência" />
+              </div>
+            </div>
+          </div>
+
+          <p class="sum-note" id="pickup-note" hidden style="margin-top:18px;">
+            🏬 Você retira na loja: Rodovia do Tapanã, 183B — Residencial Cabano, Belém-PA.
+            Avise seu nome no balcão.
+          </p>
         </section>
 
         <!-- Etapa 3: pagamento -->
@@ -139,7 +159,7 @@
     </div>
   </footer>
 
-  <script src="data.js"></script>
+  <script src="produtos.js"></script><script src="data.js"></script>
   <script src="app.js"></script>
   <script>
     const STATE = { step: 1, order: null };
@@ -176,10 +196,12 @@
       const desc = payDesconto(total, pay, cupom.desc);
       const final = Math.max(0, total + frete - desc - cupom.desc);
 
-      const itensHtml = ids.map((id) => {
-        const p = byId(id);
-        return `<div class="mini-row"><span>${cart[id]}× ${p.name}</span><span>${brl(p.price * cart[id])}</span></div>`;
-      }).join("");
+      // Ids antigos/inválidos não podem quebrar o resumo inteiro.
+      const itensHtml = ids
+        .map((id) => ({ id, p: byId(id) }))
+        .filter(({ p }) => !!p)
+        .map(({ id, p }) => `<div class="mini-row"><span>${cart[id]}× ${p.name}</span><span>${brl(p.price * cart[id])}</span></div>`)
+        .join("");
 
       document.getElementById("summary").innerHTML = `
         <h3>Resumo do pedido</h3>
@@ -246,13 +268,47 @@
     }
 
     function validateStep(n) {
-      if (n === 2 && currentDelivery() === "delivery") {
-        const cep = document.getElementById("cep").value.trim();
-        const rua = document.getElementById("rua").value.trim();
-        const num = document.getElementById("num").value.trim();
-        if (!cep || !rua || !num) { toast("Preencha CEP, rua e número"); return false; }
+      if (n === 2) {
+        const nome = document.getElementById("nome").value.trim();
+        const tel = document.getElementById("tel").value.trim();
+        if (nome.length < 3) { toast("Informe o nome de quem vai receber"); return false; }
+        if (onlyDigits(tel).length < 10) { toast("Informe um WhatsApp válido com DDD"); return false; }
+
+        if (currentDelivery() === "delivery") {
+          const cep = document.getElementById("cep").value.trim();
+          const rua = document.getElementById("rua").value.trim();
+          const num = document.getElementById("num").value.trim();
+          if (!cep || !rua || !num) { toast("Preencha CEP, rua e número"); return false; }
+        }
       }
       return true;
+    }
+
+    function onlyDigits(v) {
+      return String(v || "").replace(/\D/g, "");
+    }
+
+    /** (91) 98408-7045 — máscara leve, sem atrapalhar quem apaga. */
+    function formatPhone(v) {
+      const d = onlyDigits(v).slice(0, 11);
+      if (d.length <= 2) return d;
+      if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+      if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+      return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    }
+
+    function buildCustomer() {
+      return {
+        name: document.getElementById("nome").value.trim(),
+        phone: onlyDigits(document.getElementById("tel").value),
+      };
+    }
+
+    /** Mostra o endereço só quando a entrega é em casa. */
+    function syncDeliveryBlock() {
+      const isDelivery = currentDelivery() === "delivery";
+      document.getElementById("address-block").hidden = !isDelivery;
+      document.getElementById("pickup-note").hidden = isDelivery;
     }
 
     function buildOrder() {
@@ -267,6 +323,7 @@
         date: new Date().toISOString(),
         items: Object.entries(getCart()).map(([id, q]) => ({ id, qty: q, name: byId(id).name, price: byId(id).price })),
         delivery, pay,
+        customer: buildCustomer(),
         coupon: cupom.desc ? cupom.code : "",
         couponDesc: cupom.desc,
         address: delivery === "delivery" ? {
@@ -293,7 +350,18 @@
       }
 
       document.querySelectorAll('input[name="delivery"], input[name="pay"]').forEach((r) =>
-        r.addEventListener("change", renderSummary));
+        r.addEventListener("change", () => { syncDeliveryBlock(); renderSummary(); }));
+
+      // Contato: pré-preenche do último pedido para o cliente não redigitar.
+      try {
+        const last = JSON.parse(localStorage.getItem("mq_last_order"));
+        if (last?.customer?.name) document.getElementById("nome").value = last.customer.name;
+        if (last?.customer?.phone) document.getElementById("tel").value = formatPhone(last.customer.phone);
+      } catch {}
+
+      const telInput = document.getElementById("tel");
+      telInput.addEventListener("input", () => { telInput.value = formatPhone(telInput.value); });
+      syncDeliveryBlock();
 
       // Cupom de desconto
       const couponInput = document.getElementById("coupon");
@@ -346,6 +414,7 @@
         items: Object.entries(getCart()).map(([id, qty]) => ({ id, qty })),
         delivery: local.delivery,
         pay: local.pay,
+        customer: local.customer,
         coupon: local.coupon,
         address: local.address,
         obs: local.obs,

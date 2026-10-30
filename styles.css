@@ -198,6 +198,8 @@ h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
 .dept:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: transparent; }
 .dept .d-ico { font-size: 34px; }
 .dept span { display: block; margin-top: 8px; font-size: 13.5px; font-weight: 700; color: var(--blue); }
+.dept:hover span { color: var(--red); }
+.dept .d-count { display: block; margin-top: 4px; font-size: 12px; color: var(--ink-2); }
 
 /* ---------- Grid de produtos ---------- */
 .grid {
@@ -245,12 +247,23 @@ h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
 .crumb { font-size: 13px; color: var(--ink-2); margin: 18px 0 12px; }
 .crumb a:hover { color: var(--red); }
 .cat-layout { display: grid; grid-template-columns: 250px 1fr; gap: 24px; align-items: start; }
+.cat-layout.no-filters { grid-template-columns: 1fr; }
 .filters { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
 .filters h3 { font-size: 15px; color: var(--blue); margin-bottom: 12px; }
 .filters ul li { padding: 7px 0; border-bottom: 1px dashed var(--line); }
 .filters a { font-size: 14px; color: var(--ink-2); font-weight: 500; }
 .filters a:hover { color: var(--red); }
 .filters a.active { color: var(--red); font-weight: 800; }
+.filters-extra { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.filters-offers {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 12px; border-radius: 10px;
+  background: var(--red); color: #fff; font-size: 14px; font-weight: 800;
+  transition: filter .15s ease, transform .15s ease;
+}
+.filters-offers:hover { filter: brightness(.94); transform: translateY(-1px); }
+.filters-offers span { font-weight: 700; opacity: .9; }
+.filters-offers.active { outline: 2px solid var(--blue); outline-offset: 2px; }
 .cat-head { margin-bottom: 16px; }
 .cat-head h1 { font-size: 26px; font-weight: 900; color: var(--blue); }
 .cat-head p { color: var(--ink-2); font-size: 14px; margin: 6px 0 0; }
@@ -273,7 +286,31 @@ h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
 .tb-field output { font-weight: 800; color: var(--blue); min-width: 76px; }
 .tb-check { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
 .tb-check input { accent-color: var(--red); width: 16px; height: 16px; }
+.tb-check:has(input:disabled) { cursor: default; opacity: .85; }
+.tb-check input:disabled { cursor: default; }
 .tb-count { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--red); }
+
+/* ---------- Paginação do catálogo ---------- */
+/* Com ~2 mil itens o grid é paginado; os botões seguem a cor da marca
+   e a página atual fica em destaque sólido. */
+.pager {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; flex-wrap: wrap; margin: 26px 0 8px;
+}
+.pager button {
+  min-width: 40px; height: 40px; padding: 0 12px;
+  background: var(--white); color: var(--blue);
+  border: 1.5px solid var(--line); border-radius: 10px;
+  font-weight: 700; font-size: 14px;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.pager button:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+.pager button.is-current {
+  background: var(--red); border-color: var(--red); color: #fff;
+  cursor: default;
+}
+.pager button:disabled { opacity: .4; cursor: default; }
+.pager .pager-gap { color: var(--ink-2); padding: 0 2px; }
 
 /* ---------- Formulário (login) ---------- */
 .auth-wrap { max-width: 440px; margin: 24px auto; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 30px; }
@@ -308,8 +345,12 @@ h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
 .step.active .step-n { background: var(--red); color: #fff; }
 .step:not(:last-child)::after { content: "›"; margin-left: 10px; color: var(--line); font-weight: 400; }
 
-.checkout-layout { display: grid; grid-template-columns: 1fr 360px; gap: 22px; align-items: start; }
+.checkout-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start; }
+/* Itens de grid têm min-width:auto: sem isto, campos longos esticam a coluna
+   e o layout de 2 colunas quebra para 1 no desktop. */
+.co-forms { min-width: 0; }
 .co-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 22px; }
+.co-card + .co-card { margin-top: 18px; }
 .co-card h2 { font-size: 18px; font-weight: 800; color: var(--blue); margin: 0 0 16px; }
 .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .option, .pay-opt { cursor: pointer; }
@@ -325,9 +366,11 @@ h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
 .pay-body .pay-ico { font-size: 20px; }
 .pay-body small { margin-left: auto; }
 .co-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.co-fields .field { margin: 0; }
+.co-fields .field { margin: 0; min-width: 0; }
 .co-fields .field-sm { max-width: 140px; }
 .co-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 18px; }
+/* Resumo do checkout reaproveita .summary (sticky/padding) com ajustes próprios. */
+.summary .sum-note { line-height: 1.45; }
 .summary .mini-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
 .mini-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); gap: 12px; }
 .mini-row span:first-child { flex: 1; }
@@ -346,6 +389,9 @@ h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
 .kv:last-of-type { border-bottom: 0; }
 .kv small { color: var(--ink-2); font-weight: 700; }
 .kv span { text-align: right; color: var(--ink); }
+
+/* `display:flex` acima venceria o atributo `hidden` do HTML: reforça o esconde. */
+[hidden] { display: none !important; }
 
 /* ---------- Meus pedidos ---------- */
 #orders-list { display: flex; flex-direction: column; gap: 16px; }
@@ -371,6 +417,20 @@ h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
 @media (max-width: 900px) {
   .checkout-layout, .confirm-grid { grid-template-columns: 1fr; }
   .option-grid, .co-fields { grid-template-columns: 1fr; }
+  /* No celular o resumo vem depois do form; sticky não faz sentido. */
+  .summary { position: static; }
+  .co-fields .field-sm { max-width: none; }
+}
+
+@media (max-width: 720px) {
+  .page-title { font-size: 23px; }
+  .co-card { padding: 18px 16px; }
+  /* Botões em largura cheia, alvo de toque confortável. */
+  .co-actions { flex-direction: column-reverse; gap: 10px; }
+  .co-actions .btn { width: 100%; justify-content: center; }
+  .coupon-row { flex-wrap: wrap; }
+  .coupon-row .btn { width: 100%; }
+  .step { font-size: 12.5px; }
 }
 
 /* ---------- Página de produto ---------- */
@@ -479,6 +539,7 @@ footer { background: var(--blue); color: #cdd8f2; margin-top: 44px; padding: 40p
   .grid { grid-template-columns: repeat(3, 1fr); }
   .cat-grid { grid-template-columns: repeat(3, 1fr); }
   .cat-layout { grid-template-columns: 1fr; }
+  .cat-layout > * { min-width: 0; }
   .product { grid-template-columns: 1fr; gap: 24px; }
   .cart-layout { grid-template-columns: 1fr; }
   .foot-grid { grid-template-columns: 1fr 1fr; }
@@ -494,4 +555,28 @@ footer { background: var(--blue); color: #cdd8f2; margin-top: 44px; padding: 40p
   .hero-main { padding: 26px; min-height: 240px; }
   .foot-grid { grid-template-columns: 1fr; }
   .cart-row { grid-template-columns: 64px 1fr; }
+  /* Nav de categorias: deixa claro que há mais itens à direita */
+  .catnav { position: relative; }
+  .catnav::after {
+    content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 44px;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(255,255,255,0), #fff 75%);
+  }
+  .catnav ul { padding: 0 16px; scroll-padding-left: 16px; -webkit-overflow-scrolling: touch; }
+  .catnav a { padding: 12px 12px; }
+  .catnav.at-end::after { opacity: 0; }
+  .catnav::after { transition: opacity .2s; }
+  /* Filtros ocupam a largura toda e viram lista rolável horizontal */
+  .filters { padding: 14px; min-width: 0; }
+  .filters h3 { margin-bottom: 8px; }
+  .filters ul { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .filters ul::-webkit-scrollbar { display: none; }
+  .filters ul li { border-bottom: 0; padding: 0; flex: 0 0 auto; }
+  .filters ul a {
+    display: block; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px;
+    white-space: nowrap; font-size: 13px;
+  }
+  .filters ul a.active { border-color: var(--red); background: #fff5f5; }
+  .filters-extra { margin-top: 10px; padding-top: 10px; }
+  .filters-offers { width: 100%; }
 }

@@ -29,6 +29,8 @@ const CATEGORIES = [
   { slug: "mamaes-e-bebes", name: "Mamães e bebês", icon: "🍼" },
   { slug: "higiene-pessoal", name: "Higiene pessoal", icon: "🧼" },
   { slug: "servicos-de-saude", name: "Serviços de Saúde", icon: "🩺" },
+  { slug: "conveniencia", name: "Conveniência", icon: "🛒" },
+  { slug: "marcas-exclusivas", name: "Marcas Exclusivas", icon: "⭐" },
 ];
 
 /* Departamentos (navegação por imagem) */
@@ -40,8 +42,11 @@ const DEPARTMENTS = [
   { name: "Protetor Solar Facial", slug: "dermo-e-beleza", icon: "☀️" },
 ];
 
-/* Catálogo de produtos. price em centavos; oldPrice opcional (de/por). */
-const PRODUCTS = [
+/* Catálogo de produtos. price em centavos; oldPrice opcional (de/por).
+   CURATED = itens escritos à mão (serviços, marcas exclusivas, destaques).
+   PRODUCTS_EXCEL = catálogo real da planilha, gerado em produtos.js
+   (abas REFERÊNCIA = éticos, GENÉRICO, SIMILAR e PERFUMARIA).          */
+const CURATED = [
   // Medicamentos e Saúde
   { id: "med-01", cat: "medicamentos-e-saude", name: "Paracetamol 750mg 20 comprimidos", tag: "Genérico", ico: "💊", price: 899, oldPrice: 1290, rating: 4.8, reviews: 214, rx: false },
   { id: "med-02", cat: "medicamentos-e-saude", name: "Dipirona sódica 500mg 20 comprimidos", tag: "Genérico", ico: "💊", price: 649, oldPrice: 999, rating: 4.7, reviews: 388, rx: false },
@@ -101,10 +106,28 @@ const PRODUCTS = [
   { id: "mar-01", cat: "marcas-exclusivas", name: "Linha +Q Cuidado hidratante corporal", tag: "Marca exclusiva", ico: "🧴", price: 2990, oldPrice: 3990, rating: 4.8, reviews: 312, rx: false },
   { id: "mar-02", cat: "marcas-exclusivas", name: "+Q Infantil kit shampoo e sabonete", tag: "Marca exclusiva", ico: "🍼", price: 3490, oldPrice: 4490, rating: 4.7, reviews: 208, rx: false },
   { id: "mar-03", cat: "marcas-exclusivas", name: "+Q Saúde vitamina C 500mg 30 comprimidos", tag: "Marca exclusiva", ico: "🍊", price: 1590, oldPrice: 2190, rating: 4.9, reviews: 456, rx: false },
-];
+]; // fim de CURATED
 
-/* Helpers */
-const byId = (id) => PRODUCTS.find((p) => p.id === id);
+/* Catálogo da planilha (produtos.js). No browser o arquivo já foi carregado
+   antes deste por tag <script>, então a global window.PRODUCTS_EXCEL existe.
+   No Node (api/), precisa do require explícito. */
+const EXCEL_CATALOG =
+  typeof window !== "undefined" && Array.isArray(window.PRODUCTS_EXCEL)
+    ? window.PRODUCTS_EXCEL
+    : (() => {
+        try {
+          return require("./produtos.js");
+        } catch (e) {
+          console.warn("produtos.js não encontrado — usando só o catálogo curado.");
+          return [];
+        }
+      })();
+
+const PRODUCTS = CURATED.concat(EXCEL_CATALOG);
+
+/* Helpers: índice por id para o catálogo de ~2 mil itens (evita .find em loop) */
+const PRODUCT_INDEX = new Map(PRODUCTS.map((p) => [p.id, p]));
+const byId = (id) => PRODUCT_INDEX.get(id);
 const byCat = (slug) => (slug === "ofertas" ? PRODUCTS.filter((p) => p.oldPrice) : PRODUCTS.filter((p) => p.cat === slug));
 const catName = (slug) => (CATEGORIES.find((c) => c.slug === slug) || {}).name || "Produtos";
 

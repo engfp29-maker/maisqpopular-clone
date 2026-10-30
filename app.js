@@ -9,9 +9,19 @@ function getCart() {
   try { return JSON.parse(localStorage.getItem(CART_KEY)) || {}; } catch { return {}; }
 }
 function setCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); updateCartBadge(); }
+// Itens cujo produto saiu do catálogo eram mantidos no carrinho: quebravam
+// a renderização e inflavam o total. Descarta-os na leitura.
+function pruneCart() {
+  const c = getCart();
+  const valid = Object.fromEntries(
+    Object.entries(c).filter(([id, q]) => byId(id) && Number(q) > 0)
+  );
+  if (Object.keys(valid).length !== Object.keys(c).length) setCart(valid);
+  return valid;
+}
 function cartCount() { return Object.values(getCart()).reduce((a, b) => a + b, 0); }
 function cartTotal() {
-  const c = getCart();
+  const c = pruneCart();
   return Object.entries(c).reduce((sum, [id, q]) => sum + (byId(id)?.price || 0) * q, 0);
 }
 function addToCart(id, qty = 1) {
@@ -179,10 +189,14 @@ function toast(msg) {
 function renderHeader() {
   const host = document.getElementById("site-header");
   if (!host) return;
-  const nav = CATEGORIES.map((c) => {
-    const href = c.slug === "ofertas" ? "ofertas.html" : `categoria.html?cat=${c.slug}`;
-    return `<li><a href="${href}">${c.name}</a></li>`;
-  }).join("");
+  // Aba "Categorias" abre a página com filtro lateral. "Ofertas" não fica no menu,
+  // mas o slug continua em CATEGORIES para a página ofertas.html e os filtros.
+  const nav = [
+    `<li><a href="categorias.html">Categorias</a></li>`,
+    ...CATEGORIES.filter((c) => c.slug !== "ofertas").map(
+      (c) => `<li><a href="categoria.html?cat=${c.slug}">${c.name}</a></li>`
+    ),
+  ].join("");
   host.innerHTML = `
     <div class="topbar">
       <p class="topbar-tagline">+Q preço, +Q cuidado, +Q perto de você.</p>
@@ -230,18 +244,30 @@ function renderBenefits() {
 }
 
 /* ---------- Card de produto ---------- */
+// Escapa texto vindo da planilha: nomes podem conter & ("Head&should"), < ou ".
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
 function productCard(p) {
   const off = discountPct(p);
+  const name = esc(p.name);
+  // Avaliações reais ainda não existem para o catálogo importado (reviews: 0)
+  const rating = p.reviews
+    ? `<div class="card-rating">★★★★★ <small>(${p.reviews})</small></div>`
+    : "";
   return `
     <article class="card" data-id="${p.id}">
       ${off ? `<span class="card-off">-${off}%</span>` : ""}
       ${p.rx ? `<span class="card-rx">Receita</span>` : ""}
-      <a class="card-thumb" href="produto.html?id=${p.id}" aria-label="${p.name}">
+      <a class="card-thumb" href="produto.html?id=${p.id}" aria-label="${name}">
         <span aria-hidden="true">${p.ico}</span>
       </a>
-      <a class="card-name" href="produto.html?id=${p.id}">${p.name}</a>
-      <span class="card-tag">${p.tag}</span>
-      <div class="card-rating">★★★★★ <small>(${p.reviews})</small></div>
+      <a class="card-name" href="produto.html?id=${p.id}">${name}</a>
+      <span class="card-tag">${esc(p.tag)}</span>
+      ${rating}
       <div class="card-price">
         ${p.oldPrice ? `<small class="price-old">${brl(p.oldPrice)}</small>` : ""}
         ${p.service && p.price === 0 ? `<strong class="price-free">Grátis</strong>` : `<strong>${brl(p.price)}</strong>`}
@@ -269,6 +295,22 @@ function initSearch() {
   });
 }
 
+/* ---------- Nav de categorias: pista de rolagem ---------- */
+// O gradiente em .catnav::after só faz sentido enquanto houver itens
+// escondidos à direita; some ao chegar no fim da lista.
+function initCatnavHint() {
+  const nav = document.querySelector(".catnav");
+  const list = nav && nav.querySelector("ul");
+  if (!list) return;
+  const sync = () => {
+    const atEnd = list.scrollLeft + list.clientWidth >= list.scrollWidth - 2;
+    nav.classList.toggle("at-end", atEnd);
+  };
+  list.addEventListener("scroll", sync, { passive: true });
+  window.addEventListener("resize", sync);
+  sync();
+}
+
 /* ---------- Delegação global de "Adicionar" ---------- */
 document.addEventListener("click", (e) => {
   const add = e.target.closest(".add-btn");
@@ -277,8 +319,10 @@ document.addEventListener("click", (e) => {
 
 /* ---------- Init ---------- */
 document.addEventListener("DOMContentLoaded", () => {
+  pruneCart();
   renderHeader();
   renderBenefits();
   initSearch();
+  initCatnavHint();
   updateCartBadge();
 });

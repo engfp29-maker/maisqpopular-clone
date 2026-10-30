@@ -1,12 +1,13 @@
 /* ============================================================
    POST /api/order — recalcula e registra um pedido
-   Body: { items:[{id,qty}], delivery, pay, coupon?, address?, obs? }
+   Body: { items:[{id,qty}], delivery, pay, customer:{name,phone},
+           coupon?, address?, obs? }
    O preço é sempre recalculado no servidor (nunca confia no cliente).
    ============================================================ */
 
 const crypto = require("crypto");
 const { PRODUCTS, COUPONS, LOYALTY } = require("../data.js");
-const { priceOrder } = require("../pricing.js");
+const { priceOrder, cleanCustomer } = require("../pricing.js");
 
 function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
@@ -63,6 +64,10 @@ module.exports = function handler(req, res) {
 
   if (!priced.ok) return res.status(422).json({ ok: false, error: priced.error });
 
+  // Sem nome e telefone não há como entregar nem avisar o cliente.
+  const customer = cleanCustomer(body.customer);
+  if (!customer.ok) return res.status(422).json({ ok: false, error: customer.error });
+
   const address = priced.delivery === "delivery" ? cleanAddress(body.address) : null;
   if (priced.delivery === "delivery" && !address) {
     return res.status(422).json({ ok: false, error: "Informe o endereço de entrega." });
@@ -77,6 +82,7 @@ module.exports = function handler(req, res) {
     items: priced.items.map((l) => ({ id: l.id, name: l.name, price: l.price, qty: l.qty })),
     delivery: priced.delivery,
     pay: priced.pay,
+    customer: customer.customer,
     address,
     obs: String(body.obs ?? "").trim().slice(0, 300),
     coupon: priced.coupon,
